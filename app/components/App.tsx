@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LiveConnectionState,
   LiveTranscriptionEvent,
@@ -19,13 +19,13 @@ interface TranscriptionSegment {
   text: string;
 }
 
-const App: () => JSX.Element = () => {
+const App: React.FC = () => {
   const [interimTranscript, setInterimTranscript] = useState<TranscriptionSegment | null>(null);
   const [finalTranscriptions, setFinalTranscriptions] = useState<TranscriptionSegment[]>([{ speaker: -1, text: "Powered by Deepgram" }]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
-  const keepAliveInterval = useRef<any>();
+  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setupMicrophone();
@@ -102,11 +102,15 @@ const App: () => JSX.Element = () => {
         connection.keepAlive();
       }, 10000);
     } else {
-      clearInterval(keepAliveInterval.current);
+      if (keepAliveInterval.current) {
+        clearInterval(keepAliveInterval.current);
+      }
     }
 
     return () => {
-      clearInterval(keepAliveInterval.current);
+      if (keepAliveInterval.current) {
+        clearInterval(keepAliveInterval.current);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
@@ -115,7 +119,7 @@ const App: () => JSX.Element = () => {
     const speakerLabel = segment.speaker >= 0 ? `SPEAKER ${segment.speaker + 1}: ` : '';
     const className = isInterim ? "bg-gray-800/70 p-2 mb-2 text-white italic" : "bg-black/70 p-2 mb-2 text-white";
     return (
-      <p className={className}>
+      <p key={segment.text} className={className}>
         <strong>{speakerLabel}</strong>{segment.text}
       </p>
     );
@@ -129,11 +133,7 @@ const App: () => JSX.Element = () => {
             <div className="relative w-full h-full">
               {microphone && <Visualizer microphone={microphone} />}
               <div className="absolute inset-0 max-w-4xl mx-auto overflow-y-auto p-4">
-                {finalTranscriptions.map((segment, index) => (
-                  <React.Fragment key={index}>
-                    {renderTranscription(segment)}
-                  </React.Fragment>
-                ))}
+                {finalTranscriptions.map((segment, index) => renderTranscription(segment))}
                 {interimTranscript && renderTranscription(interimTranscript, true)}
               </div>
             </div>
