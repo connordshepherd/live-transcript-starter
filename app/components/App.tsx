@@ -15,7 +15,8 @@ import {
 import Visualizer from "./Visualizer";
 
 const App: () => JSX.Element = () => {
-  const [transcriptions, setTranscriptions] = useState<string[]>(["Powered by Deepgram"]);
+  const [interimTranscript, setInterimTranscript] = useState<string>("");
+  const [finalTranscriptions, setFinalTranscriptions] = useState<string[]>(["Powered by Deepgram"]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
@@ -52,10 +53,16 @@ const App: () => JSX.Element = () => {
     };
 
     const onTranscript = (data: LiveTranscriptionEvent) => {
-      const thisCaption = data.channel.alternatives[0].transcript;
+      const transcript = data.channel.alternatives[0].transcript;
+      const isFinal = data.is_final;
 
-      if (thisCaption !== "") {
-        setTranscriptions(prev => [...prev, thisCaption]);
+      if (transcript !== "") {
+        if (isFinal) {
+          setFinalTranscriptions(prev => [...prev, transcript]);
+          setInterimTranscript("");
+        } else {
+          setInterimTranscript(transcript);
+        }
       }
     };
 
@@ -104,9 +111,12 @@ const App: () => JSX.Element = () => {
             <div className="relative w-full h-full">
               {microphone && <Visualizer microphone={microphone} />}
               <div className="absolute inset-0 max-w-4xl mx-auto overflow-y-auto p-4">
-                {transcriptions.map((text, index) => (
+                {finalTranscriptions.map((text, index) => (
                   <p key={index} className="bg-black/70 p-2 mb-2 text-white">{text}</p>
                 ))}
+                {interimTranscript && (
+                  <p className="bg-gray-800/70 p-2 mb-2 text-white italic">{interimTranscript}</p>
+                )}
               </div>
             </div>
           </div>
