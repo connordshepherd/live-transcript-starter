@@ -14,9 +14,14 @@ import {
 } from "../context/MicrophoneContextProvider";
 import Visualizer from "./Visualizer";
 
+interface TranscriptionSegment {
+  speaker: number;
+  text: string;
+}
+
 const App: () => JSX.Element = () => {
-  const [interimTranscript, setInterimTranscript] = useState<string>("");
-  const [finalTranscriptions, setFinalTranscriptions] = useState<string[]>(["Powered by Deepgram"]);
+  const [interimTranscript, setInterimTranscript] = useState<TranscriptionSegment | null>(null);
+  const [finalTranscriptions, setFinalTranscriptions] = useState<TranscriptionSegment[]>([{ speaker: -1, text: "Powered by Deepgram" }]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
@@ -35,6 +40,7 @@ const App: () => JSX.Element = () => {
         smart_format: true,
         filler_words: true,
         utterance_end_ms: 3000,
+        diarize: true,  // Enable diarization
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -45,23 +51,26 @@ const App: () => JSX.Element = () => {
     if (!connection) return;
 
     const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX:
-      // Prevent packetZero from being sent. If sent at size 0, the connection will close. 
       if (e.data.size > 0) {
         connection?.send(e.data);
       }
     };
 
     const onTranscript = (data: LiveTranscriptionEvent) => {
+      const words = data.channel.alternatives[0].words || [];
+      if (words.length === 0) return;
+
       const transcript = data.channel.alternatives[0].transcript;
       const isFinal = data.is_final;
+      const speaker = words[0].speaker;
 
       if (transcript !== "") {
+        const newSegment: TranscriptionSegment = { speaker, text: transcript };
         if (isFinal) {
-          setFinalTranscriptions(prev => [...prev, transcript]);
-          setInterimTranscript("");
+          setFinalTranscriptions(prev => [...prev, newSegment]);
+          setInterimTranscript(null);
         } else {
-          setInterimTranscript(transcript);
+          setInterimTranscript(newSegment);
         }
       }
     };
@@ -74,7 +83,6 @@ const App: () => JSX.Element = () => {
     }
 
     return () => {
-      // prettier-ignore
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
@@ -103,6 +111,16 @@ const App: () => JSX.Element = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
+  const renderTranscription = (segment: TranscriptionSegment, isInterim: boolean = false) => {
+    const speakerLabel = segment.speaker >= 0 ? `SPEAKER ${segment.speaker + 1}: ` : '';
+    const className = isInterim ? "bg-gray-800/70 p-2 mb-2 text-white italic" : "bg-black/70 p-2 mb-2 text-white";
+    return (
+      <p className={className}>
+        <strong>{speakerLabel}</strong>{segment.text}
+      </p>
+    );
+  };
+
   return (
     <>
       <div className="flex h-full antialiased">
@@ -111,12 +129,12 @@ const App: () => JSX.Element = () => {
             <div className="relative w-full h-full">
               {microphone && <Visualizer microphone={microphone} />}
               <div className="absolute inset-0 max-w-4xl mx-auto overflow-y-auto p-4">
-                {finalTranscriptions.map((text, index) => (
-                  <p key={index} className="bg-black/70 p-2 mb-2 text-white">{text}</p>
+                {finalTranscriptions.map((segment, index) => (
+                  <React.Fragment key={index}>
+                    {renderTranscription(segment)}
+                  </React.Fragment>
                 ))}
-                {interimTranscript && (
-                  <p className="bg-gray-800/70 p-2 mb-2 text-white italic">{interimTranscript}</p>
-                )}
+                {interimTranscript && renderTranscription(interimTranscript, true)}
               </div>
             </div>
           </div>
