@@ -119,7 +119,6 @@ const App: React.FC = () => {
   }, [microphoneState, connectionState]);
 
   const summaryCount = useRef(0);
-  const transcriptBuffer = useRef<string[]>([]);
 
   useEffect(() => {
     const updateInterval = setInterval(() => {
