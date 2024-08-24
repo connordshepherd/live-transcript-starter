@@ -24,8 +24,7 @@ export async function POST(request: Request) {
             role: "user",
             content: `Summarize this transcript. Your summary should be one sentence, less than 15 words: ${transcript}`
           }
-        ],
-        max_tokens: 150
+        ]
       }),
     });
 
