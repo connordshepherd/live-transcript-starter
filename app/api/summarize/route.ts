@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   const { transcript } = await request.json();
 
+  console.log(`Received summarization request. Transcript length: ${transcript.length}`);
+
   // Replace this URL with your actual GPT-4 API endpoint
   const gpt4Url = 'https://api.openai.com/v1/chat/completions';
 
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
           },
           {
             role: "user",
-            content: `Summarize this transcript. Your summary should be one sentence, less than 15 words: ${transcript}`
+            content: `Summarize this transcript: ${transcript}`
           }
         ]
       }),
@@ -30,6 +32,8 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     const summary = data.choices[0].message.content;
+
+    console.log(`Generated summary. Length: ${summary.length}`);
 
     return NextResponse.json({ summary });
   } catch (error) {
