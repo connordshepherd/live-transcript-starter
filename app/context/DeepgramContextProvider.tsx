@@ -6,7 +6,7 @@ import {
   LiveConnectionState,
   LiveTranscriptionEvents,
   type LiveSchema,
-  type LiveTranscriptionEvent,
+  type LiveTranscriptionEvent as OriginalLiveTranscriptionEvent,
 } from "@deepgram/sdk";
 
 import {
@@ -16,6 +16,27 @@ import {
   ReactNode,
   FunctionComponent,
 } from "react";
+
+// Extend the original LiveTranscriptionEvent type
+interface ExtendedLiveTranscriptionEvent extends OriginalLiveTranscriptionEvent {
+  channel: {
+    alternatives: Array<{
+      transcript: string;
+      confidence: number;
+      words: Array<{
+        word: string;
+        start: number;
+        end: number;
+        confidence: number;
+        punctuated_word: string;
+        speaker: number;  // Add the speaker property
+      }>;
+    }>;
+  };
+}
+
+// Use the extended type for LiveTranscriptionEvent
+type LiveTranscriptionEvent = ExtendedLiveTranscriptionEvent;
 
 interface DeepgramContextType {
   connection: LiveClient | null;
