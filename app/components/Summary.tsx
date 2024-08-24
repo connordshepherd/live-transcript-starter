@@ -32,8 +32,12 @@ const Summary: React.FC<SummaryProps> = ({ transcript }) => {
 
   return (
     <div className="bg-white p-4 h-full overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-4">Summary</h2>
-      <p>{summary}</p>
+      <h2 className="text-2xl font-bold mb-4 text-black">Summary</h2>
+      {summary ? (
+        <p className="text-black">{summary}</p>
+      ) : (
+        <p className="text-gray-500 italic">Waiting for summary...</p>
+      )}
     </div>
   );
 };
