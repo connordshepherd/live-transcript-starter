@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LiveConnectionState,
   LiveTranscriptionEvent,
@@ -14,18 +14,18 @@ import {
 } from "../context/MicrophoneContextProvider";
 import Visualizer from "./Visualizer";
 
-interface TranscriptionSegment {
+type WordWithSpeaker = {
+  word: string;
   speaker: number;
-  text: string;
-}
+};
 
-const App: React.FC = () => {
-  const [interimTranscript, setInterimTranscript] = useState<TranscriptionSegment | null>(null);
-  const [finalTranscriptions, setFinalTranscriptions] = useState<TranscriptionSegment[]>([{ speaker: -1, text: "Powered by Deepgram" }]);
+const App: () => JSX.Element = () => {
+  const [interimTranscript, setInterimTranscript] = useState<WordWithSpeaker[]>([]);
+  const [finalTranscriptions, setFinalTranscriptions] = useState<WordWithSpeaker[][]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
-  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
+  const keepAliveInterval = useRef<any>();
 
   useEffect(() => {
     setupMicrophone();
@@ -40,7 +40,7 @@ const App: React.FC = () => {
         smart_format: true,
         filler_words: true,
         utterance_end_ms: 3000,
-        diarize: true,  // Enable diarization
+        diarize: true,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,6 +51,8 @@ const App: React.FC = () => {
     if (!connection) return;
 
     const onData = (e: BlobEvent) => {
+      // iOS SAFARI FIX:
+      // Prevent packetZero from being sent. If sent at size 0, the connection will close. 
       if (e.data.size > 0) {
         connection?.send(e.data);
       }
@@ -58,19 +60,17 @@ const App: React.FC = () => {
 
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
-      if (words.length === 0) return;
+      const wordsWithSpeaker: WordWithSpeaker[] = words.map(word => ({
+        word: word.word,
+        speaker: word.speaker || 0,
+      }));
 
-      const transcript = data.channel.alternatives[0].transcript;
-      const isFinal = data.is_final;
-      const speaker = words[0].speaker;
-
-      if (transcript !== "") {
-        const newSegment: TranscriptionSegment = { speaker, text: transcript };
-        if (isFinal) {
-          setFinalTranscriptions(prev => [...prev, newSegment]);
-          setInterimTranscript(null);
+      if (wordsWithSpeaker.length > 0) {
+        if (data.is_final) {
+          setFinalTranscriptions(prev => [...prev, wordsWithSpeaker]);
+          setInterimTranscript([]);
         } else {
-          setInterimTranscript(newSegment);
+          setInterimTranscript(wordsWithSpeaker);
         }
       }
     };
@@ -83,6 +83,7 @@ const App: React.FC = () => {
     }
 
     return () => {
+      // prettier-ignore
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
@@ -102,28 +103,14 @@ const App: React.FC = () => {
         connection.keepAlive();
       }, 10000);
     } else {
-      if (keepAliveInterval.current) {
-        clearInterval(keepAliveInterval.current);
-      }
+      clearInterval(keepAliveInterval.current);
     }
 
     return () => {
-      if (keepAliveInterval.current) {
-        clearInterval(keepAliveInterval.current);
-      }
+      clearInterval(keepAliveInterval.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
-
-  const renderTranscription = (segment: TranscriptionSegment, isInterim: boolean = false) => {
-    const speakerLabel = segment.speaker >= 0 ? `SPEAKER ${segment.speaker + 1}: ` : '';
-    const className = isInterim ? "bg-gray-800/70 p-2 mb-2 text-white italic" : "bg-black/70 p-2 mb-2 text-white";
-    return (
-      <p key={segment.text} className={className}>
-        <strong>{speakerLabel}</strong>{segment.text}
-      </p>
-    );
-  };
 
   return (
     <>
@@ -133,8 +120,30 @@ const App: React.FC = () => {
             <div className="relative w-full h-full">
               {microphone && <Visualizer microphone={microphone} />}
               <div className="absolute inset-0 max-w-4xl mx-auto overflow-y-auto p-4">
-                {finalTranscriptions.map((segment, index) => renderTranscription(segment))}
-                {interimTranscript && renderTranscription(interimTranscript, true)}
+                {finalTranscriptions.map((sentence, index) => (
+                  <p key={index} className="bg-black/70 p-2 mb-2 text-white">
+                    {sentence.map((word, wordIndex) => (
+                      <span key={wordIndex}>
+                        {wordIndex === 0 || word.speaker !== sentence[wordIndex - 1].speaker
+                          ? ` [SPEAKER ${word.speaker}] `
+                          : ' '}
+                        {word.word}
+                      </span>
+                    ))}
+                  </p>
+                ))}
+                {interimTranscript.length > 0 && (
+                  <p className="bg-gray-800/70 p-2 mb-2 text-white italic">
+                    {interimTranscript.map((word, index) => (
+                      <span key={index}>
+                        {index === 0 || word.speaker !== interimTranscript[index - 1].speaker
+                          ? ` [SPEAKER ${word.speaker}] `
+                          : ' '}
+                        {word.word}
+                      </span>
+                    ))}
+                  </p>
+                )}
               </div>
             </div>
           </div>
