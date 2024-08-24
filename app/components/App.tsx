@@ -13,19 +13,23 @@ import {
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
 import Visualizer from "./Visualizer";
+import Summary from "./Summary";
 
 type WordWithSpeaker = {
   word: string;
   speaker: number;
 };
 
-const App: () => JSX.Element = () => {
+const App: React.FC = () => {
   const [interimTranscript, setInterimTranscript] = useState<WordWithSpeaker[]>([]);
   const [finalTranscriptions, setFinalTranscriptions] = useState<WordWithSpeaker[][]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } =
     useMicrophone();
   const keepAliveInterval = useRef<any>();
+
+  const [fullTranscript, setFullTranscript] = useState<string>('');
+  const [summaryTranscript, setSummaryTranscript] = useState<string>('');
 
   useEffect(() => {
     setupMicrophone();
@@ -112,44 +116,68 @@ const App: () => JSX.Element = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const last120Seconds = fullTranscript.split(' ').slice(-240).join(' '); // Assuming average of 2 words per second
+      setSummaryTranscript(last120Seconds);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fullTranscript]);
+
+  useEffect(() => {
+    if (finalTranscriptions.length > 0) {
+      const newTranscript = finalTranscriptions
+        .map(sentence => 
+          sentence.map(word => word.word).join(' ')
+        )
+        .join(' ');
+      setFullTranscript(prev => `${prev} ${newTranscript}`.trim());
+    }
+  }, [finalTranscriptions]);
+
   return (
-    <>
-      <div className="flex h-full antialiased">
-        <div className="flex flex-row h-full w-full overflow-x-hidden">
-          <div className="flex flex-col flex-auto h-full">
-            <div className="relative w-full h-full">
-              {microphone && <Visualizer microphone={microphone} />}
-              <div className="absolute inset-0 max-w-4xl mx-auto overflow-y-auto p-4">
-                {finalTranscriptions.map((sentence, index) => (
-                  <p key={index} className="bg-black/70 p-2 mb-2 text-white">
-                    {sentence.map((word, wordIndex) => (
-                      <span key={wordIndex}>
-                        {wordIndex === 0 || word.speaker !== sentence[wordIndex - 1].speaker
-                          ? ` [SPEAKER ${word.speaker}] `
-                          : ' '}
-                        {word.word}
-                      </span>
-                    ))}
-                  </p>
-                ))}
-                {interimTranscript.length > 0 && (
-                  <p className="bg-gray-800/70 p-2 mb-2 text-white italic">
-                    {interimTranscript.map((word, index) => (
-                      <span key={index}>
-                        {index === 0 || word.speaker !== interimTranscript[index - 1].speaker
-                          ? ` [SPEAKER ${word.speaker}] `
-                          : ' '}
-                        {word.word}
-                      </span>
-                    ))}
-                  </p>
-                )}
-              </div>
+    <div className="flex h-full antialiased">
+      <div className="flex flex-row h-full w-full overflow-x-hidden">
+        {/* Left half - Transcription */}
+        <div className="flex flex-col flex-auto h-full w-1/2">
+          <div className="relative w-full h-full">
+            {microphone && <Visualizer microphone={microphone} />}
+            <div className="absolute inset-0 max-w-2xl mx-auto overflow-y-auto p-4">
+              {finalTranscriptions.map((sentence, index) => (
+                <p key={index} className="bg-black/70 p-2 mb-2 text-white">
+                  {sentence.map((word, wordIndex) => (
+                    <span key={wordIndex}>
+                      {wordIndex === 0 || word.speaker !== sentence[wordIndex - 1].speaker
+                        ? ` [SPEAKER ${word.speaker}] `
+                        : ' '}
+                      {word.word}
+                    </span>
+                  ))}
+                </p>
+              ))}
+              {interimTranscript.length > 0 && (
+                <p className="bg-gray-800/70 p-2 mb-2 text-white italic">
+                  {interimTranscript.map((word, index) => (
+                    <span key={index}>
+                      {index === 0 || word.speaker !== interimTranscript[index - 1].speaker
+                        ? ` [SPEAKER ${word.speaker}] `
+                        : ' '}
+                      {word.word}
+                    </span>
+                  ))}
+                </p>
+              )}
             </div>
           </div>
         </div>
+        
+        {/* Right half - Summary */}
+        <div className="flex-auto h-full w-1/2">
+          <Summary transcript={summaryTranscript} />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
