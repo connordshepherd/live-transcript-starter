@@ -28,8 +28,10 @@ const App: React.FC = () => {
     useMicrophone();
   const keepAliveInterval = useRef<any>();
 
-  const [fullTranscript, setFullTranscript] = useState<string>('');
+  const [recentTranscript, setRecentTranscript] = useState<string>('');
   const [summaryTranscript, setSummaryTranscript] = useState<string>('');
+  const transcriptBuffer = useRef<string[]>([]);
+  const lastSummaryTime = useRef<number>(Date.now());
 
   useEffect(() => {
     setupMicrophone();
@@ -117,13 +119,23 @@ const App: React.FC = () => {
   }, [microphoneState, connectionState]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const last120Seconds = fullTranscript.split(' ').slice(-240).join(' '); // Assuming average of 2 words per second
-      setSummaryTranscript(last120Seconds);
-    }, 10000);
+    const updateInterval = setInterval(() => {
+      const currentTime = Date.now();
+      const timeSinceLastSummary = currentTime - lastSummaryTime.current;
 
-    return () => clearInterval(interval);
-  }, [fullTranscript]);
+      // Update the recent transcript
+      const recentText = transcriptBuffer.current.join(' ');
+      setRecentTranscript(recentText);
+
+      // If 30 seconds have passed, trigger a new summary
+      if (timeSinceLastSummary >= 30000) {
+        setSummaryTranscript(recentText);
+        lastSummaryTime.current = currentTime;
+      }
+    }, 1000); // Check every second
+
+    return () => clearInterval(updateInterval);
+  }, []);
 
   useEffect(() => {
     if (finalTranscriptions.length > 0) {
@@ -132,7 +144,14 @@ const App: React.FC = () => {
           sentence.map(word => word.word).join(' ')
         )
         .join(' ');
-      setFullTranscript(prev => `${prev} ${newTranscript}`.trim());
+      
+      // Add new transcript to the buffer
+      transcriptBuffer.current.push(newTranscript);
+      
+      // Keep only the last 120 seconds (assuming 2 words per second)
+      while (transcriptBuffer.current.join(' ').split(' ').length > 240) {
+        transcriptBuffer.current.shift();
+      }
     }
   }, [finalTranscriptions]);
 
@@ -173,7 +192,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Right half - Summary */}
-        <div className="flex-auto h-full w-1/2">
+        <div className="flex-auto h-full w-1/2 border-l border-gray-300">
           <Summary transcript={summaryTranscript} />
         </div>
       </div>
