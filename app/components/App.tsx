@@ -118,6 +118,8 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
+  const summaryCount = useRef(0);
+
   useEffect(() => {
     const updateInterval = setInterval(() => {
       const currentTime = Date.now();
@@ -129,8 +131,11 @@ const App: React.FC = () => {
 
       // If 30 seconds have passed, trigger a new summary
       if (timeSinceLastSummary >= 30000) {
+        console.log(`Triggering summary #${summaryCount.current + 1}`);
+        console.log(`Recent text length: ${recentText.length}`);
         setSummaryTranscript(recentText);
         lastSummaryTime.current = currentTime;
+        summaryCount.current += 1;
       }
     }, 1000); // Check every second
 
@@ -152,6 +157,8 @@ const App: React.FC = () => {
       while (transcriptBuffer.current.join(' ').split(' ').length > 240) {
         transcriptBuffer.current.shift();
       }
+
+      console.log(`Updated transcript buffer. Current length: ${transcriptBuffer.current.join(' ').split(' ').length} words`);
     }
   }, [finalTranscriptions]);
 
