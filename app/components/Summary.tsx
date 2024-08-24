@@ -11,9 +11,13 @@ const Summary: React.FC<SummaryProps> = ({ transcript }) => {
 
   useEffect(() => {
     const getSummary = async () => {
-      if (!transcript) return;
+      if (!transcript || transcript.length === 0) {
+        console.warn('Skipping summary request due to empty transcript');
+        return;
+      }
       console.log(`Requesting summary #${summaryCount + 1}`);
       console.log(`Transcript length: ${transcript.length}`);
+      console.log(`First few words: ${transcript.split(' ').slice(0, 10).join(' ')}...`);
       try {
         const response = await fetch('/api/summarize', {
           method: 'POST',
