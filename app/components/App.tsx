@@ -133,9 +133,16 @@ const App: React.FC = () => {
       if (timeSinceLastSummary >= 30000) {
         console.log(`Triggering summary #${summaryCount.current + 1}`);
         console.log(`Recent text length: ${recentText.length}`);
-        setSummaryTranscript(recentText);
-        lastSummaryTime.current = currentTime;
-        summaryCount.current += 1;
+        console.log(`Transcript buffer size: ${transcriptBuffer.current.length}`);
+        console.log(`First few words: ${recentText.split(' ').slice(0, 10).join(' ')}...`);
+        
+        if (recentText.length > 0) {
+          setSummaryTranscript(recentText);
+          lastSummaryTime.current = currentTime;
+          summaryCount.current += 1;
+        } else {
+          console.warn('Skipping summary due to empty transcript');
+        }
       }
     }, 1000); // Check every second
 
@@ -158,7 +165,10 @@ const App: React.FC = () => {
         transcriptBuffer.current.shift();
       }
 
-      console.log(`Updated transcript buffer. Current length: ${transcriptBuffer.current.join(' ').split(' ').length} words`);
+      const bufferWordCount = transcriptBuffer.current.join(' ').split(' ').length;
+      console.log(`Updated transcript buffer. Current length: ${bufferWordCount} words`);
+      console.log(`Buffer size: ${transcriptBuffer.current.length}`);
+      console.log(`First few words: ${transcriptBuffer.current.join(' ').split(' ').slice(0, 10).join(' ')}...`);
     }
   }, [finalTranscriptions]);
 
