@@ -119,6 +119,7 @@ const App: React.FC = () => {
   }, [microphoneState, connectionState]);
 
   const summaryCount = useRef(0);
+  const transcriptBuffer = useRef<string[]>([]);
 
   useEffect(() => {
     const updateInterval = setInterval(() => {
@@ -161,8 +162,14 @@ const App: React.FC = () => {
       transcriptBuffer.current.push(newTranscript);
       
       // Keep only the last 120 seconds (assuming 2 words per second)
-      while (transcriptBuffer.current.join(' ').split(' ').length > 240) {
-        transcriptBuffer.current.shift();
+      let totalWords = 0;
+      let index = transcriptBuffer.current.length - 1;
+      while (index >= 0 && totalWords < 240) {
+        totalWords += transcriptBuffer.current[index].split(' ').length;
+        index--;
+      }
+      if (index >= 0) {
+        transcriptBuffer.current = transcriptBuffer.current.slice(index + 1);
       }
 
       const bufferWordCount = transcriptBuffer.current.join(' ').split(' ').length;
