@@ -120,7 +120,7 @@ const App: React.FC = () => {
     const interval = setInterval(() => {
       const last120Seconds = fullTranscript.split(' ').slice(-240).join(' '); // Assuming average of 2 words per second
       setSummaryTranscript(last120Seconds);
-    }, 30000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [fullTranscript]);
