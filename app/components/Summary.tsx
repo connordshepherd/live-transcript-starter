@@ -10,6 +10,7 @@ const Summary: React.FC<SummaryProps> = ({ transcript }) => {
 
   useEffect(() => {
     const getSummary = async () => {
+      if (!transcript) return;
       try {
         const response = await fetch('/api/summarize', {
           method: 'POST',
@@ -24,10 +25,8 @@ const Summary: React.FC<SummaryProps> = ({ transcript }) => {
         console.error('Error getting summary:', error);
       }
     };
-
-    if (transcript) {
-      getSummary();
-    }
+  
+    getSummary();
   }, [transcript]);
 
   return (
