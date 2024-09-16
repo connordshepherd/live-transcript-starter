@@ -38,16 +38,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-dvh">
-      <body
-        className={`h-full dark ${classNames(
-          favorit.variable,
-          inter.className
-        )}`}
-      >
-        <MicrophoneContextProvider>
-          <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <div className="flex flex-col min-h-screen">
+          <header className="bg-black p-4">
+          </header>
+          <main className="flex-grow">{children}</main>
+        </div>
       </body>
     </html>
   );
