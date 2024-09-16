@@ -38,16 +38,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-dvh">
-      <body
-        className={`h-full dark ${classNames(
-          favorit.variable,
-          inter.className
-        )}`}
-      >
-        <MicrophoneContextProvider>
-          <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <div className="flex flex-col min-h-screen">
+          <header className="bg-black p-4">
+            {/* Remove or comment out the following line */}
+            {/* <Image src="/deepgram.svg" alt="Deepgram Logo" width={305} height={59} /> */}
+          </header>
+          <main className="flex-grow">{children}</main>
+        </div>
       </body>
     </html>
   );
