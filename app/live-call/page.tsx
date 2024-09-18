@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import LiveCall from "../components/LiveCall";
 import { 
   useDeepgram, 
@@ -24,81 +24,82 @@ export default function LiveCallPage() {
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
-  const dataQueue = useRef<Blob[]>([]);
+  const isConnecting = useRef(false);
+
+  const handleTranscript = useCallback((data: LiveTranscriptionEvent) => {
+    const words = data.channel.alternatives[0].words || [];
+    if (words.length > 0) {
+      const newEntry: TranscriptEntry = {
+        speaker: words[0].speaker || 0,
+        text: words.map(word => word.word).join(' ')
+      };
+
+      if (data.is_final) {
+        setTranscript(prev => [...prev, newEntry]);
+        setInterimTranscript([]);
+      } else {
+        setInterimTranscript([newEntry]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     setupMicrophone();
   }, [setupMicrophone]);
 
   useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready) {
+    if (microphoneState === MicrophoneState.Ready && !isConnecting.current) {
+      isConnecting.current = true;
       console.log("Microphone ready, connecting to Deepgram");
-      connectToDeepgram({
-        model: "nova-2",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 3000,
-        diarize: true,
-      });
+      try {
+        connectToDeepgram({
+          model: "nova-2",
+          interim_results: true,
+          smart_format: true,
+          filler_words: true,
+          utterance_end_ms: 3000,
+          diarize: true,
+        });
+      } catch (error) {
+        console.error("Failed to connect to Deepgram:", error);
+      } finally {
+        isConnecting.current = false;
+      }
     }
   }, [microphoneState, connectToDeepgram]);
 
   useEffect(() => {
     if (!microphone || !connection) return;
-
+  
     console.log(`Connection state: ${connectionState}`);
-
+  
     const onData = (e: BlobEvent) => {
-      if (e.data.size > 0) {
-        if (connectionState === LiveConnectionState.OPEN && connection) {
-          connection.send(e.data);
-        } else {
-          dataQueue.current.push(e.data);
-        }
+      if (e.data.size > 0 && connectionState === LiveConnectionState.OPEN) {
+        connection.send(e.data);
       }
     };
-
-    const onTranscript = (data: LiveTranscriptionEvent) => {
-      const words = data.channel.alternatives[0].words || [];
-      if (words.length > 0) {
-        const newEntry: TranscriptEntry = {
-          speaker: words[0].speaker || 0,
-          text: words.map(word => word.word).join(' ')
-        };
-
-        if (data.is_final) {
-          setTranscript(prev => [...prev, newEntry]);
-          setInterimTranscript([]);
-        } else {
-          setInterimTranscript([newEntry]);
-        }
-      }
-    };
-
+  
     if (connectionState === LiveConnectionState.OPEN) {
       console.log("Connection open, setting up listeners");
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      connection.addListener(LiveTranscriptionEvents.Transcript, handleTranscript);
       
       if (microphone.state !== 'recording') {
         console.log("Starting microphone");
-        startMicrophone();
-      }
-
-      // Send any queued data
-      while (dataQueue.current.length > 0) {
-        const data = dataQueue.current.shift();
-        if (data) connection.send(data);
+        try {
+          startMicrophone();
+        } catch (error) {
+          console.error("Failed to start microphone:", error);
+        }
       }
     }
-
+  
     return () => {
       console.log("Cleaning up listeners");
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-      connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      connection.removeListener(LiveTranscriptionEvents.Transcript, handleTranscript);
     };
-  }, [connectionState, connection, microphone, startMicrophone]);
+  }, [connectionState, connection, microphone, startMicrophone, handleTranscript]);
 
   useEffect(() => {
     if (connectionState === LiveConnectionState.OPEN && connection) {
