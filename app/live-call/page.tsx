@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import LiveCall from "../components/LiveCall";
 import { 
   useDeepgram, 
@@ -21,8 +21,10 @@ interface TranscriptEntry {
 
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
+  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setupMicrophone();
@@ -52,14 +54,18 @@ export default function LiveCallPage() {
 
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
-      if (words.length > 0 && data.is_final) {
-        setTranscript(prev => [
-          ...prev,
-          {
-            speaker: words[0].speaker || 0,
-            text: words.map(word => word.word).join(' ')
-          }
-        ]);
+      if (words.length > 0) {
+        const newEntry: TranscriptEntry = {
+          speaker: words[0].speaker || 0,
+          text: words.map(word => word.word).join(' ')
+        };
+
+        if (data.is_final) {
+          setTranscript(prev => [...prev, newEntry]);
+          setInterimTranscript([]);
+        } else {
+          setInterimTranscript([newEntry]);
+        }
       }
     };
 
@@ -67,7 +73,6 @@ export default function LiveCallPage() {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
       
-      // Check if the microphone is not already recording before starting
       if (microphone.state !== 'recording') {
         startMicrophone();
       }
@@ -79,5 +84,27 @@ export default function LiveCallPage() {
     };
   }, [connectionState, connection, microphone, startMicrophone]);
 
-  return <LiveCall transcript={transcript} />;
+  useEffect(() => {
+    if (!connection) return;
+
+    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
+      connection.keepAlive();
+
+      keepAliveInterval.current = setInterval(() => {
+        connection.keepAlive();
+      }, 10000);
+    } else {
+      if (keepAliveInterval.current) {
+        clearInterval(keepAliveInterval.current);
+      }
+    }
+
+    return () => {
+      if (keepAliveInterval.current) {
+        clearInterval(keepAliveInterval.current);
+      }
+    };
+  }, [microphoneState, connectionState, connection]);
+
+  return <LiveCall transcript={[...transcript, ...interimTranscript]} />;
 }
