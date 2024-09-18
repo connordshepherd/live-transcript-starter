@@ -66,7 +66,11 @@ export default function LiveCallPage() {
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      startMicrophone();
+      
+      // Check if the microphone is not already recording before starting
+      if (microphone.state !== 'recording') {
+        startMicrophone();
+      }
     }
 
     return () => {
