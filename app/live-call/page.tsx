@@ -24,7 +24,6 @@ export default function LiveCallPage() {
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
-  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
   const dataQueue = useRef<Blob[]>([]);
 
   useEffect(() => {
@@ -33,6 +32,7 @@ export default function LiveCallPage() {
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
+      console.log("Microphone ready, connecting to Deepgram");
       connectToDeepgram({
         model: "nova-2",
         interim_results: true,
@@ -46,6 +46,8 @@ export default function LiveCallPage() {
 
   useEffect(() => {
     if (!microphone || !connection) return;
+
+    console.log(`Connection state: ${connectionState}`);
 
     const onData = (e: BlobEvent) => {
       if (e.data.size > 0) {
@@ -74,16 +76,25 @@ export default function LiveCallPage() {
       }
     };
 
-    microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-    connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-
     if (connectionState === LiveConnectionState.OPEN) {
+      console.log("Connection open, setting up listeners");
+      microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+      connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      
       if (microphone.state !== 'recording') {
+        console.log("Starting microphone");
         startMicrophone();
+      }
+
+      // Send any queued data
+      while (dataQueue.current.length > 0) {
+        const data = dataQueue.current.shift();
+        if (data) connection.send(data);
       }
     }
 
     return () => {
+      console.log("Cleaning up listeners");
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
     };
@@ -91,34 +102,13 @@ export default function LiveCallPage() {
 
   useEffect(() => {
     if (connectionState === LiveConnectionState.OPEN && connection) {
-      // Send any queued data
-      while (dataQueue.current.length > 0) {
-        const data = dataQueue.current.shift();
-        if (data) connection.send(data);
-      }
-
-      // Start keep-alive interval
-      keepAliveInterval.current = setInterval(() => {
+      const keepAliveInterval = setInterval(() => {
         connection.keepAlive();
       }, 10000);
 
-      // Start microphone if not already recording
-      if (microphone && microphone.state !== 'recording') {
-        startMicrophone();
-      }
-    } else {
-      // Clear keep-alive interval if connection is not open
-      if (keepAliveInterval.current) {
-        clearInterval(keepAliveInterval.current);
-      }
+      return () => clearInterval(keepAliveInterval);
     }
-
-    return () => {
-      if (keepAliveInterval.current) {
-        clearInterval(keepAliveInterval.current);
-      }
-    };
-  }, [connectionState, connection, microphone, startMicrophone]);
+  }, [connectionState, connection]);
 
   return <LiveCall transcript={[...transcript, ...interimTranscript]} />;
 }
