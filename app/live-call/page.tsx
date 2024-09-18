@@ -49,7 +49,7 @@ export default function LiveCallPage() {
 
     const onData = (e: BlobEvent) => {
       if (e.data.size > 0) {
-        if (connectionState === LiveConnectionState.OPEN) {
+        if (connectionState === LiveConnectionState.OPEN && connection) {
           connection.send(e.data);
         } else {
           dataQueue.current.push(e.data);
@@ -90,7 +90,7 @@ export default function LiveCallPage() {
   }, [connectionState, connection, microphone, startMicrophone]);
 
   useEffect(() => {
-    if (connectionState === LiveConnectionState.OPEN) {
+    if (connectionState === LiveConnectionState.OPEN && connection) {
       // Send any queued data
       while (dataQueue.current.length > 0) {
         const data = dataQueue.current.shift();
