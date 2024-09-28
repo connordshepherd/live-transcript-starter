@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import LiveCall from "../components/LiveCall";
 import { 
   useDeepgram, 
@@ -24,6 +24,7 @@ export default function LiveCallPage() {
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
+  const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTranscript = useCallback((data: LiveTranscriptionEvent) => {
     const words = data.channel.alternatives[0].words || [];
@@ -45,7 +46,13 @@ export default function LiveCallPage() {
   // Set up microphone on component mount
   useEffect(() => {
     setupMicrophone();
-  }, [setupMicrophone]);
+    return () => {
+      // Clean up microphone on unmount
+      if (microphone) {
+        microphone.stop();
+      }
+    };
+  }, [setupMicrophone, microphone]);
 
   // Connect to Deepgram when microphone is ready
   useEffect(() => {
@@ -68,7 +75,7 @@ export default function LiveCallPage() {
 
     const onData = (e: BlobEvent) => {
       // iOS SAFARI FIX: Prevent empty packets from being sent
-      if (e.data.size > 0) {
+      if (e.data.size > 0 && connectionState === LiveConnectionState.OPEN) {
         connection?.send(e.data);
       }
     };
@@ -80,10 +87,14 @@ export default function LiveCallPage() {
       startMicrophone();
     }
 
-    // Clean up event listeners on unmount
+    // Clean up event listeners on unmount or when connection state changes
     return () => {
-      connection.removeListener(LiveTranscriptionEvents.Transcript, handleTranscript);
-      microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+      if (connection) {
+        connection.removeListener(LiveTranscriptionEvents.Transcript, handleTranscript);
+      }
+      if (microphone) {
+        microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+      }
     };
   }, [connectionState, connection, microphone, startMicrophone, handleTranscript]);
 
@@ -92,14 +103,28 @@ export default function LiveCallPage() {
     if (!connection) return;
 
     if (connectionState === LiveConnectionState.OPEN) {
-      connection.keepAlive();
+      // Clear any existing interval
+      if (keepAliveIntervalRef.current) {
+        clearInterval(keepAliveIntervalRef.current);
+      }
 
-      const keepAliveInterval = setInterval(() => {
-        connection.keepAlive();
+      // Set up new keep-alive interval
+      keepAliveIntervalRef.current = setInterval(() => {
+        if (connection && connectionState === LiveConnectionState.OPEN) {
+          connection.keepAlive();
+        }
       }, 10000);
 
-      return () => clearInterval(keepAliveInterval);
+      // Initial keep-alive call
+      connection.keepAlive();
     }
+
+    // Clean up interval on unmount or when connection state changes
+    return () => {
+      if (keepAliveIntervalRef.current) {
+        clearInterval(keepAliveIntervalRef.current);
+      }
+    };
   }, [connectionState, connection]);
 
   return <LiveCall transcript={[...transcript, ...interimTranscript]} />;
