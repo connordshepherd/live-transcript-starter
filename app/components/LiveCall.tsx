@@ -98,14 +98,14 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       </div>
 
       {/* Main content area with tabs for Chat and Transcript */}
-      <main className="flex-grow flex flex-col">
-        <Tabs defaultValue="chat" className="flex-grow flex flex-col">
+      <main className="flex-grow flex flex-col relative">
+        <Tabs defaultValue="chat" className="absolute inset-0 flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="chat" className="font-heading">Chat</TabsTrigger>
             <TabsTrigger value="transcript" className="font-heading">Transcript</TabsTrigger>
           </TabsList>
-          <TabsContent value="chat" className="flex-grow">
-            <ScrollArea className="h-full">
+          <TabsContent value="chat" className="flex-grow relative">
+            <ScrollArea className="absolute inset-0">
               <div className="space-y-4 p-4">
                 {chatMessages.map((message, index) => (
                   message.type === 'tip' ? (
@@ -138,8 +138,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             </ScrollArea>
           </TabsContent>
           {/* Transcript tab content */}
-          <TabsContent value="transcript" className="flex-grow">
-            <ScrollArea className="h-full">
+          <TabsContent value="transcript" className="flex-grow relative">
+            <ScrollArea className="absolute inset-0">
               <div className="space-y-4 p-4">
                 {/* Render transcript entries */}
                 {transcript.map((entry, index) => (
