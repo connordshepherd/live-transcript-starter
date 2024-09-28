@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Mic, MicOff, Phone, PhoneOff, MessageSquare, RefreshCw, Moon, Sparkles } from 'lucide-react'
 
 // Sample chat messages for demonstration purposes
@@ -36,14 +35,14 @@ const actionButtons = [
 
 // Define the type for a transcript entry
 interface TranscriptEntry {
-  speaker: number;
-  text: string;
-}
-
+    speaker: number;
+    text: string;
+  }
+  
 // Define the props type for the LiveCall component
 interface LiveCallProps {
-  transcript: TranscriptEntry[];
-}
+    transcript: TranscriptEntry[];
+  }
 
 // Main LiveCall component
 export default function LiveCall({ transcript }: LiveCallProps) {
@@ -98,58 +97,54 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       </div>
 
       {/* Main content area with tabs for Chat and Transcript */}
-      <main className="flex-grow flex flex-col relative">
-        <Tabs defaultValue="chat" className="absolute inset-0 flex flex-col">
+      <main className="flex-grow flex flex-col overflow-hidden">
+        <Tabs defaultValue="chat" className="flex-grow flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="chat" className="font-heading">Chat</TabsTrigger>
             <TabsTrigger value="transcript" className="font-heading">Transcript</TabsTrigger>
           </TabsList>
-          <TabsContent value="chat" className="flex-grow relative">
-            <ScrollArea className="absolute inset-0">
-              <div className="space-y-4 p-4">
-                {chatMessages.map((message, index) => (
-                  message.type === 'tip' ? (
-                    // Render tip message as a card
-                    <Card key={index} className="bg-card">
-                      <CardContent className="pt-6">
-                        <p className="text-xs text-muted-foreground mb-2">{message.timestamp}</p>
-                        <p className="text-card-foreground mb-4">{message.content}</p>
-                        <p className="text-sm text-muted-foreground mb-2">Source: {message.source}</p>
-                        <p className="text-sm font-medium text-card-foreground">{message.summary}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between flex-wrap">
-                        {actionButtons.map((button, buttonIndex) => (
-                          <Button key={buttonIndex} variant="ghost" size="sm" className="mt-2">
-                            {button.icon}
-                            {button.label}
-                          </Button>
-                        ))}
-                      </CardFooter>
-                    </Card>
-                  ) : (
-                    // Render user message
-                    <div key={index} className="mb-4">
-                      <p className="text-sm text-muted-foreground">{message.timestamp}</p>
-                      <p className="text-foreground">{message.content}</p>
-                    </div>
-                  )
-                ))}
-              </div>
-            </ScrollArea>
+          <TabsContent value="chat" className="flex-grow overflow-y-auto">
+            <div className="space-y-4 p-4">
+              {chatMessages.map((message, index) => (
+                message.type === 'tip' ? (
+                  // Render tip message as a card
+                  <Card key={index} className="bg-card">
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground mb-2">{message.timestamp}</p>
+                      <p className="text-card-foreground mb-4">{message.content}</p>
+                      <p className="text-sm text-muted-foreground mb-2">Source: {message.source}</p>
+                      <p className="text-sm font-medium text-card-foreground">{message.summary}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between flex-wrap">
+                      {actionButtons.map((button, buttonIndex) => (
+                        <Button key={buttonIndex} variant="ghost" size="sm" className="mt-2">
+                          {button.icon}
+                          {button.label}
+                        </Button>
+                      ))}
+                    </CardFooter>
+                  </Card>
+                ) : (
+                  // Render user message
+                  <div key={index} className="mb-4">
+                    <p className="text-sm text-muted-foreground">{message.timestamp}</p>
+                    <p className="text-foreground">{message.content}</p>
+                  </div>
+                )
+              ))}
+            </div>
           </TabsContent>
           {/* Transcript tab content */}
-          <TabsContent value="transcript" className="flex-grow relative">
-            <ScrollArea className="absolute inset-0">
-              <div className="space-y-4 p-4">
-                {/* Render transcript entries */}
-                {transcript.map((entry, index) => (
-                  <div key={index} className="mb-2">
-                    <span className="font-bold text-card-foreground">SPEAKER {entry.speaker}: </span>
-                    <span className="text-card-foreground">{entry.text}</span>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+          <TabsContent value="transcript" className="flex-grow overflow-y-auto">
+            <div className="space-y-4 p-4">
+              {/* Render transcript entries */}
+              {transcript.map((entry, index) => (
+                <div key={index} className="mb-2">
+                  <span className="font-bold text-card-foreground">SPEAKER {entry.speaker}: </span>
+                  <span className="text-card-foreground">{entry.text}</span>
+                </div>
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
       </main>
