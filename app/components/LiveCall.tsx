@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Phone, PhoneOff, MessageSquare, RefreshCw, Moon, Sparkles } from 'lucide-react'
 
+// Sample chat messages for demonstration purposes
 const chatMessages = [
   { 
     type: 'tip', 
@@ -25,6 +26,7 @@ const chatMessages = [
   },
 ]
 
+// Action buttons for chat messages
 const actionButtons = [
   { label: 'Give Me More', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
   { label: 'Give Me Something Else', icon: <RefreshCw className="h-4 w-4 mr-2" /> },
@@ -37,12 +39,14 @@ interface TranscriptEntry {
     text: string;
   }
   
-  // Define the props type for the LiveCall component
-  interface LiveCallProps {
+// Define the props type for the LiveCall component
+interface LiveCallProps {
     transcript: TranscriptEntry[];
   }
 
+// Main LiveCall component
 export default function LiveCall({ transcript }: LiveCallProps) {
+  // State variables to manage various UI states
   const [isListening, setIsListening] = React.useState(false)
   const [isAudioOn, setIsAudioOn] = React.useState(true)
   const [isCallActive, setIsCallActive] = React.useState(false)
@@ -63,7 +67,9 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         </div>
       </header>
 
+      {/* Call control buttons */}
       <div className="flex justify-between mb-4">
+        {/* Start/End Call button */}
         <Button
           variant={isCallActive ? "destructive" : "default"}
           onClick={() => setIsCallActive(!isCallActive)}
@@ -80,6 +86,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             </>
           )}
         </Button>
+        {/* Be Quiet/Resume button */}
         <Button
           variant={isQuiet ? "secondary" : "outline"}
           onClick={() => setIsQuiet(!isQuiet)}
@@ -89,6 +96,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         </Button>
       </div>
 
+      {/* Main content area with tabs for Chat and Transcript */}
       <main className="flex-grow flex flex-col overflow-hidden">
         <Tabs defaultValue="chat" className="flex-grow flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
@@ -99,6 +107,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             <div className="space-y-4 p-4">
               {chatMessages.map((message, index) => (
                 message.type === 'tip' ? (
+                  // Render tip message as a card
                   <Card key={index} className="bg-card">
                     <CardContent className="pt-6">
                       <p className="text-xs text-muted-foreground mb-2">{message.timestamp}</p>
@@ -116,6 +125,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                     </CardFooter>
                   </Card>
                 ) : (
+                  // Render user message
                   <div key={index} className="mb-4">
                     <p className="text-sm text-muted-foreground">{message.timestamp}</p>
                     <p className="text-foreground">{message.content}</p>
@@ -124,8 +134,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
               ))}
             </div>
           </TabsContent>
+          {/* Transcript tab content */}
           <TabsContent value="transcript" className="flex-grow overflow-y-auto">
             <div className="space-y-4 p-4">
+              {/* Render transcript entries */}
               {transcript.map((entry, index) => (
                 <div key={index} className="mb-2">
                   <span className="font-bold text-card-foreground">SPEAKER {entry.speaker}: </span>
