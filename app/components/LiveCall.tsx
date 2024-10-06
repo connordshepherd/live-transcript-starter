@@ -1,57 +1,90 @@
 // app/components/LiveCall.tsx
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, MicOff, Phone, PhoneOff, MessageSquare, RefreshCw, Moon, Sparkles } from 'lucide-react'
+import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Sample chat messages for demonstration purposes
-const chatMessages = [
-  { 
-    type: 'tip', 
-    content: "Quantum entanglement is a phenomenon in quantum physics where two particles become interconnected, and the quantum state of each particle cannot be described independently of the other, even when separated by a large distance. Einstein famously referred to this as 'spooky action at a distance'.", 
-    source: 'QuantumPhysics.txt', 
-    summary: "This concept is crucial for understanding quantum mechanics and has potential applications in quantum computing and cryptography.", 
-    timestamp: '10:30 AM' 
-  },
-  { type: 'user', content: 'Can you give me another tip?', timestamp: '10:35 AM' },
-  { 
-    type: 'tip', 
-    content: "The Heisenberg Uncertainty Principle states that it's impossible to simultaneously know both the exact position and the exact momentum of a particle. This fundamental limit of precision is not due to the limitations of our measuring instruments, but is an inherent property of quantum systems.", 
-    source: 'UncertaintyPrinciple.txt', 
-    summary: "This principle is a cornerstone of quantum mechanics and has profound implications for our understanding of the nature of reality at the quantum level.", 
-    timestamp: '10:36 AM' 
-  },
-]
-
-// Action buttons for chat messages
-const actionButtons = [
-  { label: 'Give Me More', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
-  { label: 'Give Me Something Else', icon: <RefreshCw className="h-4 w-4 mr-2" /> },
-  { label: 'Mark as Important', icon: <Sparkles className="h-4 w-4 mr-2" /> },
-]
+import ChatWidget from './ChatWidget'
 
 // Define the type for a transcript entry
 interface TranscriptEntry {
-    speaker: number;
-    text: string;
-  }
-  
+  speaker: number;
+  text: string;
+}
+
 // Define the props type for the LiveCall component
 interface LiveCallProps {
-    transcript: TranscriptEntry[];
-  }
+  transcript: TranscriptEntry[];
+}
+
+interface ChatMessage {
+  type: 'ai' | 'user'
+  excerpt?: string
+  timestamp: string
+  source?: string
+  summary?: string
+  content?: string
+  isDefault?: boolean
+}
+
+const defaultMessages: ChatMessage[] = [
+  {
+    type: 'ai',
+    excerpt: "Hi there! I'm listening to your call and will provide helpful tips based on the conversation. Feel free to ask me questions about what's been discussed.",
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isDefault: true,
+  },
+  {
+    type: 'ai',
+    excerpt: "Need quick info? Type in an email or website, and I'll give you a brief summary.",
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isDefault: true,
+  },
+  {
+    type: 'ai',
+    excerpt: "Use the + button to upload reference files. I'll use them to offer relevant hints during your call.",
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isDefault: true,
+  },
+]
 
 // Main LiveCall component
 export default function LiveCall({ transcript }: LiveCallProps) {
   // State variables to manage various UI states
-  const [isListening, setIsListening] = React.useState(false)
-  const [isAudioOn, setIsAudioOn] = React.useState(true)
-  const [isCallActive, setIsCallActive] = React.useState(false)
-  const [isQuiet, setIsQuiet] = React.useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [isAudioOn, setIsAudioOn] = useState(true)
+  const [isCallActive, setIsCallActive] = useState(false)
+  const [isQuiet, setIsQuiet] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>(defaultMessages)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSendMessage = (message: string) => {
+    // Add user message
+    const userMessage: ChatMessage = {
+      type: 'user',
+      content: message,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }
+    setMessages(prevMessages => [...prevMessages, userMessage])
+
+    // Show loading spinner
+    setIsLoading(true)
+
+    // Simulate AI response after 2 seconds
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        type: 'ai',
+        excerpt: 'This is an excerpt from the source document for the simulated AI response.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'SimulatedSource.txt',
+        summary: 'This is a summary of the simulated AI response.'
+      }
+      setMessages(prevMessages => [...prevMessages, aiResponse])
+      setIsLoading(false)
+    }, 2000)
+  }
 
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 bg-background">
@@ -103,37 +136,11 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             <TabsTrigger value="transcript" className="font-heading">Transcript</TabsTrigger>
           </TabsList>
           <TabsContent value="chat" className="flex-grow">
-            <ScrollArea className="h-[calc(100vh-150px)]">
-              <div className="space-y-4 p-4">
-                {chatMessages.map((message, index) => (
-                  message.type === 'tip' ? (
-                    // Render tip message as a card
-                    <Card key={index} className="bg-card">
-                      <CardContent className="pt-6">
-                        <p className="text-xs text-muted-foreground mb-2">{message.timestamp}</p>
-                        <p className="text-card-foreground mb-4">{message.content}</p>
-                        <p className="text-sm text-muted-foreground mb-2">Source: {message.source}</p>
-                        <p className="text-sm font-medium text-card-foreground">{message.summary}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between flex-wrap">
-                        {actionButtons.map((button, buttonIndex) => (
-                          <Button key={buttonIndex} variant="ghost" size="sm" className="mt-2">
-                            {button.icon}
-                            {button.label}
-                          </Button>
-                        ))}
-                      </CardFooter>
-                    </Card>
-                  ) : (
-                    // Render user message
-                    <div key={index} className="mb-4">
-                      <p className="text-sm text-muted-foreground">{message.timestamp}</p>
-                      <p className="text-foreground">{message.content}</p>
-                    </div>
-                  )
-                ))}
-              </div>
-            </ScrollArea>
+            <ChatWidget 
+              onSendMessage={handleSendMessage} 
+              messages={messages} 
+              isLoading={isLoading} 
+            />
           </TabsContent>
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-150px)]">
@@ -152,7 +159,14 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       </main>
 
       <footer className="mt-4">
-        <form className="flex space-x-2">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const input = e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement;
+          if (input.value.trim()) {
+            handleSendMessage(input.value);
+            input.value = '';
+          }
+        }} className="flex space-x-2">
           <Input
             name="chatInput"
             placeholder="Ask for a tip..."
