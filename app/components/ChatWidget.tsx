@@ -15,27 +15,6 @@ interface ChatMessage {
   isDefault?: boolean
 }
 
-const defaultMessages: ChatMessage[] = [
-  {
-    type: 'ai',
-    excerpt: "Hi there! I'm listening to your call and will provide helpful tips based on the conversation. Feel free to ask me questions about what's been discussed.",
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    isDefault: true,
-  },
-  {
-    type: 'ai',
-    excerpt: "Need quick info? Type in an email or website, and I'll give you a brief summary.",
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    isDefault: true,
-  },
-  {
-    type: 'ai',
-    excerpt: "Use the + button to upload reference files. I'll use them to offer relevant hints during your call.",
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    isDefault: true,
-  },
-]
-
 const actionButtons = [
   { label: 'Give Me More', icon: <MessageSquare className="h-3 w-3 mr-1" /> },
   { label: 'Give Me Something Else', icon: <RefreshCw className="h-3 w-3 mr-1" /> },
@@ -49,7 +28,7 @@ interface ChatWidgetProps {
 }
 
 export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatWidgetProps) {
-  const allMessages = [...defaultMessages, ...messages];
+  const allMessages = [...messages];
 
   return (
     <div className="flex flex-col bg-background">
