@@ -63,7 +63,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
 
   const scrollToBottom = () => {
     if (chatScrollAreaRef.current) {
-      chatScrollAreaRef.current.scrollTop = chatScrollAreaRef.current.scrollHeight
+      const scrollArea = chatScrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollArea) {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }
     }
   }
 
@@ -79,6 +82,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
     setMessages(prevMessages => [...prevMessages, userMessage])
+    scrollToBottom() // Scroll after adding user message
 
     // Show loading spinner
     setIsLoading(true)
@@ -94,6 +98,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       }
       setMessages(prevMessages => [...prevMessages, aiResponse])
       setIsLoading(false)
+      scrollToBottom() // Scroll after adding AI response
     }, 2000)
   }
 
