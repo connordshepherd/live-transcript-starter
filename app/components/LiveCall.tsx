@@ -1,6 +1,6 @@
 // app/components/LiveCall.tsx
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -59,6 +59,17 @@ export default function LiveCall({ transcript }: LiveCallProps) {
   const [isQuiet, setIsQuiet] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>(defaultMessages)
   const [isLoading, setIsLoading] = useState(false)
+  const chatScrollAreaRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    if (chatScrollAreaRef.current) {
+      chatScrollAreaRef.current.scrollTop = chatScrollAreaRef.current.scrollHeight
+    }
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   const handleSendMessage = (message: string) => {
     // Add user message
@@ -136,14 +147,16 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             <TabsTrigger value="transcript" className="font-heading">Transcript</TabsTrigger>
           </TabsList>
           <TabsContent value="chat" className="flex-grow">
-            <ChatWidget 
-              onSendMessage={handleSendMessage} 
-              messages={messages} 
-              isLoading={isLoading} 
-            />
+            <ScrollArea className="h-[calc(100vh-250px)]" ref={chatScrollAreaRef}>
+              <ChatWidget 
+                onSendMessage={handleSendMessage} 
+                messages={messages} 
+                isLoading={isLoading} 
+              />
+            </ScrollArea>
           </TabsContent>
           <TabsContent value="transcript" className="flex-grow">
-            <ScrollArea className="h-[calc(100vh-150px)]">
+            <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
                 {/* Render transcript entries */}
                 {transcript.map((entry, index) => (
