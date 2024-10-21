@@ -36,6 +36,7 @@ interface ChatMessage {
   summary?: string
   content?: string
   isDefault?: boolean
+  isAnimated?: boolean
 }
 
 const defaultMessages: ChatMessage[] = [
@@ -96,24 +97,44 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
     setMessages(prevMessages => [...prevMessages, userMessage])
-    scrollToBottom() // Scroll after adding user message
+    scrollToBottom()
 
-    // Show loading spinner
+    // Step 1: Show "Question detected..." with animation
     setIsLoading(true)
+    const questionDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Question detected...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, questionDetectedMessage])
+    scrollToBottom()
 
-    // Simulate AI response after 2 seconds
+    // Step 2: Replace with "Answering question..." after 1 second
     setTimeout(() => {
-      const aiResponse: ChatMessage = {
+      const answeringMessage: ChatMessage = {
         type: 'ai',
-        excerpt: 'This is an excerpt from the source document for the simulated AI response.',
+        excerpt: 'Answering question: <b>Uses of Excel Pivot Tables...</b>',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        source: 'SimulatedSource.txt',
-        summary: 'This is a summary of the simulated AI response.'
+        isAnimated: true,
       }
-      setMessages(prevMessages => [...prevMessages, aiResponse])
-      setIsLoading(false)
-      scrollToBottom() // Scroll after adding AI response
-    }, 2000)
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), answeringMessage])
+      scrollToBottom()
+
+      // Step 3: Replace with final answer after 2 more seconds
+      setTimeout(() => {
+        const finalAnswer: ChatMessage = {
+          type: 'ai',
+          excerpt: "Excel PivotTables are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
+          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Microsoft Support',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
   }
 
   // Add this useEffect hook here, before the return statement

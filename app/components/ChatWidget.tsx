@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { MessageSquare, RefreshCw, Sparkles, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,6 +13,7 @@ interface ChatMessage {
   summary?: string
   content?: string
   isDefault?: boolean
+  isAnimated?: boolean
 }
 
 const actionButtons = [
@@ -25,6 +26,19 @@ interface ChatWidgetProps {
   onSendMessage: (message: string) => void;
   messages: ChatMessage[];
   isLoading: boolean;
+}
+
+const AnimatedEllipsis: React.FC<{ text: string }> = ({ text }) => {
+  const [dots, setDots] = useState('...')
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '.' : prev + '.')
+    }, 500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return <span dangerouslySetInnerHTML={{ __html: text.replace('...', dots) }} />
 }
 
 export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatWidgetProps) {
@@ -46,23 +60,29 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium mb-2">{message.excerpt}</p>
-                  {message.summary && (
-                    <p className="text-sm mb-2">{message.summary}</p>
-                  )}
-                  <div className="flex justify-between items-center text-xs text-secondary-foreground/70 mb-2">
-                    <span>{message.timestamp}</span>
-                    {message.source && <span>Source: {message.source}</span>}
-                  </div>
-                  {!message.isDefault && (
-                    <div className="flex justify-between flex-wrap">
-                      {actionButtons.map((button, buttonIndex) => (
-                        <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
-                          {button.icon}
-                          {button.label}
-                        </Button>
-                      ))}
-                    </div>
+                  {message.isAnimated ? (
+                    <AnimatedEllipsis text={message.excerpt || ''} />
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium mb-2" dangerouslySetInnerHTML={{ __html: message.excerpt || '' }} />
+                      {message.summary && (
+                        <p className="text-sm mb-2">{message.summary}</p>
+                      )}
+                      <div className="flex justify-between items-center text-xs text-secondary-foreground/70 mb-2">
+                        <span>{message.timestamp}</span>
+                        {message.source && <span>Source: {message.source}</span>}
+                      </div>
+                      {!message.isDefault && (
+                        <div className="flex justify-between flex-wrap">
+                          {actionButtons.map((button, buttonIndex) => (
+                            <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
+                              {button.icon}
+                              {button.label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
