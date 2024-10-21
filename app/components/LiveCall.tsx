@@ -79,6 +79,11 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
   }
 
+  // Toggle the listening state
+  const toggleListening = () => {
+    setIsListening(prevState => !prevState)
+  }
+
   useEffect(() => {
     scrollToBottom()
   }, [messages])
@@ -133,9 +138,13 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <span className="text-foreground">{isListening ? 'Listening' : 'Idle'}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" onClick={() => setIsAudioOn(!isAudioOn)}>
-            {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-          </Button>
+          <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={toggleListening}
+            >
+              {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+            </Button>
           <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
         </div>
       </header>
