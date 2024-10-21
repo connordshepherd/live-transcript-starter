@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
+import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
 
@@ -285,6 +285,18 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             input.value = '';
           }
         }} className="flex space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="bg-input text-input-foreground"
+            onClick={() => {
+              // Placeholder for future file upload functionality
+              console.log('File upload button clicked');
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
           <Input
             name="chatInput"
             placeholder="Ask for a tip..."
