@@ -89,19 +89,6 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
             </div>
           </div>
         ))}
-        <AnimatePresence>
-          {isLoading && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center items-center"
-            >
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   )
