@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
+import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
 
@@ -79,6 +79,53 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       }
     }
   }
+
+  const handleExcelDetected = () => {
+    // Step 1: Show "Excel mentioned..." with animation
+    setIsLoading(true)
+    const excelDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Question detected...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, excelDetectedMessage])
+    scrollToBottom()
+
+    // Step 2: Replace with "Preparing Excel tips..." after 1 second
+    setTimeout(() => {
+      const preparingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Answering question: <b>Uses of Excel Pivot Tables...</b>',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), preparingMessage])
+      scrollToBottom()
+
+      // Step 3: Replace with final Excel tips after 2 more seconds
+      setTimeout(() => {
+        const finalTips: ChatMessage = {
+          type: 'ai',
+          excerpt: "Excel PivotTables are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
+          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Microsoft Support',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalTips])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Hook to detect when Excel is mentioned in the transcript
+  useEffect(() => {
+    const lastEntry = transcript[transcript.length - 1];
+    if (lastEntry && lastEntry.text.toLowerCase().includes("microsoft excel")) {
+      handleExcelDetected();
+    }
+  }, [transcript]);
 
   // Toggle the listening state
   const toggleListening = () => {
@@ -238,6 +285,18 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             input.value = '';
           }
         }} className="flex space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="bg-input text-input-foreground"
+            onClick={() => {
+              // Placeholder for future file upload functionality
+              console.log('File upload button clicked');
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
           <Input
             name="chatInput"
             placeholder="Ask for a tip..."
