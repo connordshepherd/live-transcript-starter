@@ -141,7 +141,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setMessages(prevMessages => [...prevMessages, salesforceDetectedMessage])
     scrollToBottom()
 
-    // Step 2: Replace with "Preparing Salesforce tips..." after 1 second
+    // Step 2: Replace with "Active Salesforce Integrations..." after 1 second
     setTimeout(() => {
       const preparingMessage: ChatMessage = {
         type: 'ai',
@@ -152,7 +152,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setMessages(prevMessages => [...prevMessages.slice(0, -1), preparingMessage])
       scrollToBottom()
 
-      // Step 3: Replace with final Excel tips after 2 more seconds
+      // Step 3: Replace with final Salesforce tips after 2 more seconds
       setTimeout(() => {
         const finalTips: ChatMessage = {
           type: 'ai',
@@ -199,7 +199,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setIsLoading(true)
     const questionDetectedMessage: ChatMessage = {
       type: 'ai',
-      excerpt: 'Question detected...',
+      excerpt: 'Research task detected...',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isAnimated: true,
     }
@@ -210,7 +210,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setTimeout(() => {
       const answeringMessage: ChatMessage = {
         type: 'ai',
-        excerpt: 'Answering question: <b>Uses of Excel Pivot Tables...</b>',
+        excerpt: 'Researching contact: <b>david@brickandmortar.co</b>',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAnimated: true,
       }
@@ -221,10 +221,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "Excel PivotTables are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
-          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
+          excerpt: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
+          summary: "David Chen has been Senior Director of Technology since 2020. Before that, he did engineering management roles at Apple and Sephora.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'Microsoft Support',
+          source: 'LinkedIn - David Chen',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
         setIsLoading(false)
