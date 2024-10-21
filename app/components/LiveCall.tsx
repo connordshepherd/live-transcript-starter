@@ -221,7 +221,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded in 2018.",
+          excerpt: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
           summary: "David Chen has been Senior Director of Technology since 2020. Before that, he did engineering management roles at Apple and Sephora.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'LinkedIn - David Chen',
