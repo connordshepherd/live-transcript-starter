@@ -80,6 +80,53 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
   }
 
+  const handleExcelDetected = () => {
+    // Step 1: Show "Excel mentioned..." with animation
+    setIsLoading(true)
+    const excelDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Excel mentioned...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, excelDetectedMessage])
+    scrollToBottom()
+
+    // Step 2: Replace with "Preparing Excel tips..." after 1 second
+    setTimeout(() => {
+      const preparingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Preparing Excel tips: <b>Pivot Tables...</b>',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), preparingMessage])
+      scrollToBottom()
+
+      // Step 3: Replace with final Excel tips after 2 more seconds
+      setTimeout(() => {
+        const finalTips: ChatMessage = {
+          type: 'ai',
+          excerpt: "Here are some tips for using Microsoft Excel effectively:",
+          summary: "1. Use PivotTables for data analysis\n2. Learn keyboard shortcuts\n3. Utilize conditional formatting\n4. Master VLOOKUP and XLOOKUP functions\n5. Create dynamic charts",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Microsoft Office Support',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalTips])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Hook to detect when Excel is mentioned in the transcript
+  useEffect(() => {
+    const lastEntry = transcript[transcript.length - 1];
+    if (lastEntry && lastEntry.text.toLowerCase().includes("microsoft excel")) {
+      handleExcelDetected();
+    }
+  }, [transcript]);
+
   // Toggle the listening state
   const toggleListening = () => {
     setIsListening(prevState => !prevState)
