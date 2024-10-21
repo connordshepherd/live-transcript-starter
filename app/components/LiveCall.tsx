@@ -80,6 +80,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
   }
 
+  // Handle when Excel is mentioned in the transcript
   const handleExcelDetected = () => {
     // Step 1: Show "Excel mentioned..." with animation
     setIsLoading(true)
@@ -124,6 +125,54 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     const lastEntry = transcript[transcript.length - 1];
     if (lastEntry && lastEntry.text.toLowerCase().includes("microsoft excel")) {
       handleExcelDetected();
+    }
+  }, [transcript]);
+
+  // Handle when Salesforce is mentioned in the transcript
+  const handleSalesforceDetected = () => {
+    // Step 1: Show "Salesforce mentioned..." with animation
+    setIsLoading(true)
+    const salesforceDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Question detected...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, salesforceDetectedMessage])
+    scrollToBottom()
+
+    // Step 2: Replace with "Preparing Salesforce tips..." after 1 second
+    setTimeout(() => {
+      const preparingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Answering question: <b>Active Salesforce Integrations...</b>',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), preparingMessage])
+      scrollToBottom()
+
+      // Step 3: Replace with final Excel tips after 2 more seconds
+      setTimeout(() => {
+        const finalTips: ChatMessage = {
+          type: 'ai',
+          excerpt: "We currently natively integrate with Salesforce Service Cloud and Salesforce Sales Cloud. Both are supported in the Pro or Enterprise plans.",
+          summary: "An integration with Salesforce Commerce cloud is in beta.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'integrations_final.pdf',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalTips])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Hook to detect when Excel is mentioned in the transcript
+  useEffect(() => {
+    const lastEntry = transcript[transcript.length - 1];
+    if (lastEntry && lastEntry.text.toLowerCase().includes("salesforce integrations")) {
+      handleSalesforceDetected();
     }
   }, [transcript]);
 
