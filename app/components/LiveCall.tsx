@@ -85,7 +85,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setIsLoading(true)
     const excelDetectedMessage: ChatMessage = {
       type: 'ai',
-      excerpt: 'Excel mentioned...',
+      excerpt: 'Question detected...',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isAnimated: true,
     }
@@ -96,7 +96,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setTimeout(() => {
       const preparingMessage: ChatMessage = {
         type: 'ai',
-        excerpt: 'Preparing Excel tips: <b>Pivot Tables...</b>',
+        excerpt: 'Answering question: <b>Uses of Excel Pivot Tables...</b>',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAnimated: true,
       }
@@ -107,10 +107,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalTips: ChatMessage = {
           type: 'ai',
-          excerpt: "Here are some tips for using Microsoft Excel effectively:",
-          summary: "1. Use PivotTables for data analysis\n2. Learn keyboard shortcuts\n3. Utilize conditional formatting\n4. Master VLOOKUP and XLOOKUP functions\n5. Create dynamic charts",
+          excerpt: "Excel PivotTables are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
+          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'Microsoft Office Support',
+          source: 'Microsoft Support',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalTips])
         setIsLoading(false)
