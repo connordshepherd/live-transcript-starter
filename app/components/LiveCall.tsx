@@ -109,7 +109,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         const finalTips: ChatMessage = {
           type: 'ai',
           excerpt: "Excel PivotTables are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
-          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
+          summary: "💡 For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Microsoft Support',
         }
@@ -156,7 +156,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalTips: ChatMessage = {
           type: 'ai',
-          excerpt: "We currently natively integrate with Salesforce Service Cloud and Salesforce Sales Cloud. Both are supported in the Pro or Enterprise plans.",
+          excerpt: "We currently natively integrate with ✅ Salesforce Service Cloud and ✅ Salesforce Sales Cloud. Both are supported in the Pro or Enterprise plans.",
           summary: "An integration with Salesforce Commerce cloud is in beta.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'integrations_final.pdf',
@@ -221,8 +221,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
-          summary: "David Chen has been Senior Director of Technology since 2020. Before that, he did engineering management roles at Apple and Sephora.",
+          excerpt: "David Chen - Senior Director of Technology at Brick & Mortar since 2020. \n• Before that, he did engineering management roles at Apple and Sephora.",
+          summary: "\n• Brick & Mortar builds software that measures the dollar value of foot traffic for retailers.\n• Founded 2018.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'LinkedIn - David Chen',
         }
