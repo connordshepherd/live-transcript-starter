@@ -74,7 +74,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                     <AnimatedEllipsis text={message.excerpt || ''} />
                   ) : (
                     <>
-                      <p className="text-sm mb-2" dangerouslySetInnerHTML={{ __html: message.excerpt || '' }} />
+                      <p className="mb-2" dangerouslySetInnerHTML={{ __html: message.excerpt || '' }} />
                       {message.summary && (
                         <p className="text-sm mb-2">{message.summary}</p>
                       )}
