@@ -379,11 +379,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             </>
           )}
         </Button>
+        {/* Be Quiet button */}
         <Button
           variant={isQuiet ? "secondary" : "outline"}
           onClick={() => setIsQuiet(!isQuiet)}
         >
-          <Moon className="h-4 w-4 mr-2" />
+          <Moon className="h-4 w-4 mr-2 text-foreground" />
           {isQuiet ? 'Resume' : 'Be Quiet'}
         </Button>
       </div>
@@ -429,22 +430,23 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             input.value = '';
           }
         }} className="flex space-x-2">
+          {/* Plus button and input in footer */}
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="bg-input text-input-foreground"
+            className="border-input hover:bg-accent hover:text-accent-foreground"
             onClick={() => {
               // Placeholder for future file upload functionality
               console.log('File upload button clicked');
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 text-foreground" />
           </Button>
           <Input
             name="chatInput"
             placeholder="Ask for a tip..."
-            className="flex-grow bg-input text-input-foreground"
+            className="flex-grow text-foreground placeholder:text-muted-foreground"
           />
           <Button type="submit" variant="secondary">Send</Button>
         </form>
