@@ -347,10 +347,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <Button 
             variant="outline" 
             size="icon"
-            className="border-input bg-background hover:bg-accent hover:text-accent-foreground"
+            className="border-input hover:bg-accent hover:text-accent-foreground"
             onClick={toggleListening}
           >
-            {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+            {isAudioOn ? <Mic className="h-4 w-4 text-foreground" /> : <MicOff className="h-4 w-4 text-foreground" />}
           </Button>
           <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
         </div>
