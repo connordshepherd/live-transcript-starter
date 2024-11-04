@@ -62,7 +62,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
             key={index}
             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-white text-foreground border'} rounded-lg p-3 shadow-sm hover:bg-secondary/50 transition-colors`}>
+            <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground' : 'bg-white text-foreground border'} rounded-lg p-3 shadow-sm hover:bg-secondary/50 transition-colors`}>
               {message.type === 'user' ? (
                 <>
                   <p>{message.content}</p>

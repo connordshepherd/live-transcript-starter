@@ -212,7 +212,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
   }
 
-  // Separate the David Chen response into its own function
+  // Separate the David Smith response into its own function
   const handleContactLookup = () => {
     setIsLoading(true)
     const questionDetectedMessage: ChatMessage = {
@@ -237,10 +237,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "<b>David Chen</b><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
+          excerpt: "<b>David Smith</b><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
           summary: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'LinkedIn - David Chen',
+          source: 'LinkedIn - David Smith',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
         setIsLoading(false)
