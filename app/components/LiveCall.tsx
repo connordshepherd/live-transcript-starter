@@ -194,8 +194,25 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
     setMessages(prevMessages => [...prevMessages, userMessage])
     scrollToBottom()
+  
+    // Different responses based on input
+    if (message.toLowerCase() === 'who am i meeting with') {
+      handleContactLookup()
+    } else if (message.toLowerCase() === 'recap') {
+      handleRecapRequest()
+    } else {
+      // Default response for unhandled queries
+      const defaultResponse: ChatMessage = {
+        type: 'ai',
+        excerpt: "I'm not sure how to help with that specific query. Try asking 'who am i meeting with' or 'recap' for a meeting summary.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages(prevMessages => [...prevMessages, defaultResponse])
+    }
+  }
 
-    // Step 1: Show "Question detected..." with animation
+  // Separate the David Chen response into its own function
+  const handleContactLookup = () => {
     setIsLoading(true)
     const questionDetectedMessage: ChatMessage = {
       type: 'ai',
@@ -206,7 +223,6 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setMessages(prevMessages => [...prevMessages, questionDetectedMessage])
     scrollToBottom()
 
-    // Step 2: Replace with "Answering question..." after 1 second
     setTimeout(() => {
       const answeringMessage: ChatMessage = {
         type: 'ai',
@@ -217,7 +233,6 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setMessages(prevMessages => [...prevMessages.slice(0, -1), answeringMessage])
       scrollToBottom()
 
-      // Step 3: Replace with final answer after 2 more seconds
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
@@ -227,6 +242,80 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           source: 'LinkedIn - David Chen',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Add new function for recap response
+  const handleRecapRequest = () => {
+    setIsLoading(true)
+    const recapDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Generating meeting recap...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, recapDetectedMessage])
+    scrollToBottom()
+
+    setTimeout(() => {
+      const processingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Analyzing discussion points...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), processingMessage])
+      scrollToBottom()
+
+      setTimeout(() => {
+        const finalRecap: ChatMessage = {
+          type: 'ai',
+          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
+          summary: "Suggested Next Step: Share case studies of ecommerce companies",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Meeting Transcript',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalRecap])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Add this new function before the return statement
+  const handleEndCall = () => {
+    setIsLoading(true)
+    const endingMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Ending call...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, endingMessage])
+    scrollToBottom()
+
+    setTimeout(() => {
+      const generatingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Generating followup email...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), generatingMessage])
+      scrollToBottom()
+
+      setTimeout(() => {
+        const emailTemplate: ChatMessage = {
+          type: 'ai',
+          excerpt: "📧 <span style='color: #98fc03'><b>Follow-up Email Draft</b></span><br/><br/>Hi David,<br/><br/>It was great catching up with you today. Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sarah",
+          summary: "Send to: david@brickandmortar.co",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Meeting Transcript',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), emailTemplate])
         setIsLoading(false)
         scrollToBottom()
       }, 2000)
@@ -270,7 +359,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       <div className="flex justify-between mb-4">
         <Button
           variant={isCallActive ? "destructive" : "default"}
-          onClick={() => setIsCallActive(!isCallActive)}
+          onClick={() => {
+            setIsCallActive(!isCallActive)
+            if (isCallActive) {
+              handleEndCall()
+            }
+          }}
         >
           {isCallActive ? (
             <>
