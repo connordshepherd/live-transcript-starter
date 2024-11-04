@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { MessageSquare, RefreshCw, Sparkles, Loader2 } from 'lucide-react'
+import { MessageSquare, RefreshCw, Sparkles, Loader2, ClipboardCopy, Mail } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface ChatMessage {
@@ -16,10 +16,20 @@ interface ChatMessage {
   isAnimated?: boolean
 }
 
-const actionButtons = [
+interface ActionButton {
+  label: string;
+  icon: React.ReactNode;
+}
+
+const defaultActionButtons: ActionButton[] = [
   { label: 'Give Me More', icon: <MessageSquare className="h-3 w-3 mr-1" /> },
   { label: 'Give Me Something Else', icon: <RefreshCw className="h-3 w-3 mr-1" /> },
   { label: 'Mark as Important', icon: <Sparkles className="h-3 w-3 mr-1" /> },
+]
+
+const transcriptActionButtons: ActionButton[] = [
+  { label: 'Copy to Clipboard', icon: <ClipboardCopy className="h-3 w-3 mr-1" /> },
+  { label: 'Send Email', icon: <Mail className="h-3 w-3 mr-1" /> },
 ]
 
 interface ChatWidgetProps {
@@ -74,12 +84,13 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                       </div>
                       {!message.isDefault && (
                         <div className="flex justify-between flex-wrap">
-                          {actionButtons.map((button, buttonIndex) => (
-                            <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
-                              {button.icon}
-                              {button.label}
-                            </Button>
-                          ))}
+                          {(message.source === 'Meeting Transcript' ? transcriptActionButtons : defaultActionButtons)
+                            .map((button, buttonIndex) => (
+                              <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
+                                {button.icon}
+                                {button.label}
+                              </Button>
+                            ))}
                         </div>
                       )}
                     </>
