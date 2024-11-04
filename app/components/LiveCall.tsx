@@ -70,6 +70,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(defaultMessages)
   const [isLoading, setIsLoading] = useState(false)
   const chatScrollAreaRef = useRef<HTMLDivElement>(null)
+  const [inputValue, setInputValue] = useState('')
 
   const scrollToBottom = () => {
     if (chatScrollAreaRef.current) {
@@ -108,8 +109,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalTips: ChatMessage = {
           type: 'ai',
-          excerpt: "Excel <span style='color: #98fc03'><b>PivotTables</b></span> are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
-          summary: "💡 For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
+          excerpt: "Excel 💡 <b>PivotTables</b> are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
+          summary: "For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Microsoft Support',
         }
@@ -211,7 +212,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
   }
 
-  // Separate the David Chen response into its own function
+  // Separate the David Smith response into its own function
   const handleContactLookup = () => {
     setIsLoading(true)
     const questionDetectedMessage: ChatMessage = {
@@ -236,10 +237,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "<span style='color: #98fc03'><b>David Chen</b></span><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
+          excerpt: "<b>David Smith</b><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
           summary: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'LinkedIn - David Chen',
+          source: 'LinkedIn - David Smith',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
         setIsLoading(false)
@@ -273,7 +274,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalRecap: ChatMessage = {
           type: 'ai',
-          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
+          excerpt: "📝 <b>Meeting Recap (So Far)</b><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
           summary: "Suggested Next Step: Share case studies of ecommerce companies",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
@@ -310,7 +311,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const emailTemplate: ChatMessage = {
           type: 'ai',
-          excerpt: "📧 <span style='color: #98fc03'><b>Follow-up Email Draft</b></span><br/><br/>Hi David,<br/><br/>It was great catching up with you today. Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sarah",
+          excerpt: "📧 <b>Follow-up Email Draft</b><br/><br/>Hi David,<br/><br/>It was great catching up with you today. We're really excited to start working with Brick & Mortar! Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD today<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sara",
           summary: "Send to: david@brickandmortar.co",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
@@ -345,12 +346,13 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         </div>
         <div className="flex items-center space-x-2">
           <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={toggleListening}
-            >
-              {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            </Button>
+            variant="outline" 
+            size="icon"
+            className="border-input hover:bg-accent hover:text-accent-foreground"
+            onClick={toggleListening}
+          >
+            {isAudioOn ? <Mic className="h-4 w-4 text-foreground" /> : <MicOff className="h-4 w-4 text-foreground" />}
+          </Button>
           <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
         </div>
       </header>
@@ -378,11 +380,13 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             </>
           )}
         </Button>
+        {/* Be Quiet button */}
         <Button
           variant={isQuiet ? "secondary" : "outline"}
           onClick={() => setIsQuiet(!isQuiet)}
+          className="text-foreground"
         >
-          <Moon className="h-4 w-4 mr-2" />
+          <Moon className="h-4 w-4 mr-2 text-foreground" />
           {isQuiet ? 'Resume' : 'Be Quiet'}
         </Button>
       </div>
@@ -422,30 +426,36 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       <footer className="mt-4">
         <form onSubmit={(e) => {
           e.preventDefault();
-          const input = e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement;
-          if (input.value.trim()) {
-            handleSendMessage(input.value);
-            input.value = '';
+          if (inputValue.trim()) {
+            handleSendMessage(inputValue);
+            setInputValue(''); // Clear the input by updating state
           }
         }} className="flex space-x-2">
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="bg-input text-input-foreground"
+            className="border-input hover:bg-accent hover:text-accent-foreground"
             onClick={() => {
-              // Placeholder for future file upload functionality
               console.log('File upload button clicked');
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 text-foreground" />
           </Button>
           <Input
             name="chatInput"
             placeholder="Ask for a tip..."
-            className="flex-grow bg-input text-input-foreground"
+            className="flex-grow text-foreground placeholder:text-muted-foreground"
+            onChange={(e) => setInputValue(e.target.value)}
+            value={inputValue}
           />
-          <Button type="submit" variant="secondary">Send</Button>
+          <Button 
+            type="submit" 
+            variant="default"
+            disabled={!inputValue?.trim()}
+          >
+            Send
+          </Button>
         </form>
       </footer>
     </div>

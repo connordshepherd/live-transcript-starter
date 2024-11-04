@@ -62,11 +62,11 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
             key={index}
             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'} rounded-lg p-3 shadow-sm`}>
+            <div className={`max-w-[70%] group ${message.type === 'user' ? 'bg-secondary text-foreground hover:bg-primary hover:text-white' : 'bg-white text-foreground border hover:bg-secondary/50'} rounded-lg p-3 shadow-sm transition-colors`}>
               {message.type === 'user' ? (
                 <>
-                  <p className="text-sm mb-1">{message.content}</p>
-                  <p className="text-xs text-primary-foreground/70">{message.timestamp}</p>
+                  <p>{message.content}</p>
+                  <p className="text-sm text-foreground/70 group-hover:text-white/70">{message.timestamp}</p>
                 </>
               ) : (
                 <>
@@ -74,7 +74,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                     <AnimatedEllipsis text={message.excerpt || ''} />
                   ) : (
                     <>
-                      <p className="text-sm font-medium mb-2" dangerouslySetInnerHTML={{ __html: message.excerpt || '' }} />
+                      <p className="mb-2" dangerouslySetInnerHTML={{ __html: message.excerpt || '' }} />
                       {message.summary && (
                         <p className="text-sm mb-2">{message.summary}</p>
                       )}
@@ -83,10 +83,15 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                         {message.source && <span>Source: {message.source}</span>}
                       </div>
                       {!message.isDefault && (
-                        <div className="flex justify-between flex-wrap">
+                        <div className="flex justify-between flex-wrap mt-3 gap-2">
                           {(message.source === 'Meeting Transcript' ? transcriptActionButtons : defaultActionButtons)
                             .map((button, buttonIndex) => (
-                              <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
+                              <Button 
+                                key={buttonIndex} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 text-xs px-2"
+                              >
                                 {button.icon}
                                 {button.label}
                               </Button>
