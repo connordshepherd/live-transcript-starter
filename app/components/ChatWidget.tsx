@@ -65,7 +65,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
             <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-white text-foreground border'} rounded-lg p-3 shadow-sm hover:bg-secondary/50 transition-colors`}>
               {message.type === 'user' ? (
                 <>
-                  <p className="text-sm mb-1">{message.content}</p>
+                  <p>{message.content}</p>
                   <p className="text-xs text-primary-foreground/70">{message.timestamp}</p>
                 </>
               ) : (
