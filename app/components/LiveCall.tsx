@@ -194,8 +194,25 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     }
     setMessages(prevMessages => [...prevMessages, userMessage])
     scrollToBottom()
+  
+    // Different responses based on input
+    if (message.toLowerCase() === 'who am i meeting with') {
+      handleContactLookup()
+    } else if (message.toLowerCase() === 'recap') {
+      handleRecapRequest()
+    } else {
+      // Default response for unhandled queries
+      const defaultResponse: ChatMessage = {
+        type: 'ai',
+        excerpt: "I'm not sure how to help with that specific query. Try asking 'who am i meeting with' or 'recap' for a meeting summary.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages(prevMessages => [...prevMessages, defaultResponse])
+    }
+  }
 
-    // Step 1: Show "Question detected..." with animation
+  // Separate the David Chen response into its own function
+  const handleContactLookup = () => {
     setIsLoading(true)
     const questionDetectedMessage: ChatMessage = {
       type: 'ai',
@@ -206,7 +223,6 @@ export default function LiveCall({ transcript }: LiveCallProps) {
     setMessages(prevMessages => [...prevMessages, questionDetectedMessage])
     scrollToBottom()
 
-    // Step 2: Replace with "Answering question..." after 1 second
     setTimeout(() => {
       const answeringMessage: ChatMessage = {
         type: 'ai',
@@ -217,7 +233,6 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setMessages(prevMessages => [...prevMessages.slice(0, -1), answeringMessage])
       scrollToBottom()
 
-      // Step 3: Replace with final answer after 2 more seconds
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
@@ -227,6 +242,43 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           source: 'LinkedIn - David Chen',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalAnswer])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Add new function for recap response
+  const handleRecapRequest = () => {
+    setIsLoading(true)
+    const recapDetectedMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Generating meeting recap...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, recapDetectedMessage])
+    scrollToBottom()
+
+    setTimeout(() => {
+      const processingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Analyzing discussion points...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), processingMessage])
+      scrollToBottom()
+
+      setTimeout(() => {
+        const finalRecap: ChatMessage = {
+          type: 'ai',
+          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap</b></span><br/>• Discussed Excel PivotTables for sales analysis<br/>• Reviewed Salesforce integration options<br/>• Next steps: Schedule follow-up demo next week",
+          summary: "Key Action Item: David will send over the integration requirements document by Friday.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Meeting Transcript',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), finalRecap])
         setIsLoading(false)
         scrollToBottom()
       }, 2000)
