@@ -310,10 +310,10 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const emailTemplate: ChatMessage = {
           type: 'ai',
-          excerpt: "📧 <span style='color: #98fc03'><b>Follow-up Email Draft</b></span><br/><br/>Hi David,<br/><br/>Thanks for taking the time to discuss your needs today. Here's a quick summary of our discussion:<br/><br/>• Reviewed Salesforce integration capabilities<br/>• Discussed Excel reporting features<br/>• Identified need for multi-state tax compliance<br/><br/>I'll send over those case studies we discussed by EOD.<br/><br/>Best regards,<br/>Sarah",
-          summary: "Email will be sent to: david@brickandmortar.co",
+          excerpt: "📧 <span style='color: #98fc03'><b>Follow-up Email Draft</b></span><br/><br/>Hi David,<br/><br/>It was great catching up with you today. Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sarah",
+          summary: "Send to: david@brickandmortar.co",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          source: 'Meeting Summary',
+          source: 'Meeting Transcript',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), emailTemplate])
         setIsLoading(false)
