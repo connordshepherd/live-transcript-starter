@@ -311,7 +311,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const emailTemplate: ChatMessage = {
           type: 'ai',
-          excerpt: "📧 <b>Follow-up Email Draft</b><br/><br/>Hi David,<br/><br/>It was great catching up with you today. Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sarah",
+          excerpt: "📧 <b>Follow-up Email Draft</b><br/><br/>Hi David,<br/><br/>It was great catching up with you today. We're really excited to start working with Brick & Mortar! Here are the next steps we discussed:<br/><br/>• Our legal team will send an MSA by EOD today<br/>• We will work to get pricing for 40 users<br/>• Please find case studies for multi-state implementations attached<br/><br/>Looking forward to catching up again next week!<br/><br/>Thanks,<br/>Sara",
           summary: "Send to: david@brickandmortar.co",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
