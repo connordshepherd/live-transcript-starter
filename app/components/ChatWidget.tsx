@@ -55,7 +55,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
   const allMessages = [...messages];
 
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex flex-col bg-white border rounded-lg hover:bg-secondary/50 transition-colors">
       <div className="space-y-4 p-4">
         {allMessages.map((message, index) => (
           <div

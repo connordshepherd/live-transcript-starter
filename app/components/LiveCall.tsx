@@ -109,7 +109,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalTips: ChatMessage = {
           type: 'ai',
-          excerpt: "Excel <span style='color: #98fc03'><b>PivotTables</b></span> are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
+          excerpt: "Excel <span style='color: #2563eb'><b>PivotTables</b></span> are a tool for analyzing large datasets by grouping and aggregating data without altering the original data.",
           summary: "💡 For example, If you have a list of sales transactions with columns for \"Date,\" \"Salesperson,\" \"Region,\" and \"Amount,\" you can use a PivotTable to see total sales for each salesperson or region.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Microsoft Support',
@@ -237,7 +237,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalAnswer: ChatMessage = {
           type: 'ai',
-          excerpt: "<span style='color: #98fc03'><b>David Chen</b></span><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
+          excerpt: "<span style='color: #2563eb'><b>David Chen</b></span><br/>• Senior Director of Technology, Brick & Mortar<br/>• Started job in 2020<br/>• Before that, engineering management at Apple and Sephora",
           summary: "Brick & Mortar builds software that measures the dollar value of foot traffic for retailers. Founded 2018.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'LinkedIn - David Chen',
@@ -274,7 +274,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalRecap: ChatMessage = {
           type: 'ai',
-          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
+          excerpt: "📝 <span style='color: #2563eb'><b>Meeting Recap (So Far)</b></span><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
           summary: "Suggested Next Step: Share case studies of ecommerce companies",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
