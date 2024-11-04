@@ -273,12 +273,49 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalRecap: ChatMessage = {
           type: 'ai',
-          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
+          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
           summary: "Suggested Next Step: Share case studies of ecommerce companies",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
         }
         setMessages(prevMessages => [...prevMessages.slice(0, -1), finalRecap])
+        setIsLoading(false)
+        scrollToBottom()
+      }, 2000)
+    }, 1000)
+  }
+
+  // Add this new function before the return statement
+  const handleEndCall = () => {
+    setIsLoading(true)
+    const endingMessage: ChatMessage = {
+      type: 'ai',
+      excerpt: 'Ending call...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAnimated: true,
+    }
+    setMessages(prevMessages => [...prevMessages, endingMessage])
+    scrollToBottom()
+
+    setTimeout(() => {
+      const generatingMessage: ChatMessage = {
+        type: 'ai',
+        excerpt: 'Generating followup email...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAnimated: true,
+      }
+      setMessages(prevMessages => [...prevMessages.slice(0, -1), generatingMessage])
+      scrollToBottom()
+
+      setTimeout(() => {
+        const emailTemplate: ChatMessage = {
+          type: 'ai',
+          excerpt: "📧 <span style='color: #98fc03'><b>Follow-up Email Draft</b></span><br/><br/>Hi David,<br/><br/>Thanks for taking the time to discuss your needs today. Here's a quick summary of our discussion:<br/><br/>• Reviewed Salesforce integration capabilities<br/>• Discussed Excel reporting features<br/>• Identified need for multi-state tax compliance<br/><br/>I'll send over those case studies we discussed by EOD.<br/><br/>Best regards,<br/>Sarah",
+          summary: "Email will be sent to: david@brickandmortar.co",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: 'Meeting Summary',
+        }
+        setMessages(prevMessages => [...prevMessages.slice(0, -1), emailTemplate])
         setIsLoading(false)
         scrollToBottom()
       }, 2000)
@@ -322,7 +359,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       <div className="flex justify-between mb-4">
         <Button
           variant={isCallActive ? "destructive" : "default"}
-          onClick={() => setIsCallActive(!isCallActive)}
+          onClick={() => {
+            setIsCallActive(!isCallActive)
+            if (isCallActive) {
+              handleEndCall()
+            }
+          }}
         >
           {isCallActive ? (
             <>
