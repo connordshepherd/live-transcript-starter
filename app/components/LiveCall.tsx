@@ -70,6 +70,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(defaultMessages)
   const [isLoading, setIsLoading] = useState(false)
   const chatScrollAreaRef = useRef<HTMLDivElement>(null)
+  const [inputValue, setInputValue] = useState('')
 
   const scrollToBottom = () => {
     if (chatScrollAreaRef.current) {
@@ -383,6 +384,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         <Button
           variant={isQuiet ? "secondary" : "outline"}
           onClick={() => setIsQuiet(!isQuiet)}
+          className="text-foreground"
         >
           <Moon className="h-4 w-4 mr-2 text-foreground" />
           {isQuiet ? 'Resume' : 'Be Quiet'}
@@ -430,14 +432,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             input.value = '';
           }
         }} className="flex space-x-2">
-          {/* Plus button and input in footer */}
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="border-input hover:bg-accent hover:text-accent-foreground"
             onClick={() => {
-              // Placeholder for future file upload functionality
               console.log('File upload button clicked');
             }}
           >
@@ -447,8 +447,16 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             name="chatInput"
             placeholder="Ask for a tip..."
             className="flex-grow text-foreground placeholder:text-muted-foreground"
+            onChange={(e) => setInputValue(e.target.value)}
+            value={inputValue}
           />
-          <Button type="submit" variant="secondary">Send</Button>
+          <Button 
+            type="submit" 
+            variant="default"
+            disabled={!inputValue?.trim()}
+          >
+            Send
+          </Button>
         </form>
       </footer>
     </div>
