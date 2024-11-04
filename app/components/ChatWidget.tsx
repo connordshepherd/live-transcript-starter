@@ -55,14 +55,14 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
   const allMessages = [...messages];
 
   return (
-    <div className="flex flex-col bg-white border rounded-lg hover:bg-secondary/50 transition-colors">
+    <div className="flex flex-col bg-background">
       <div className="space-y-4 p-4">
         {allMessages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'} rounded-lg p-3 shadow-sm`}>
+            <div className={`max-w-[70%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-white text-foreground border'} rounded-lg p-3 shadow-sm hover:bg-secondary/50 transition-colors`}>
               {message.type === 'user' ? (
                 <>
                   <p className="text-sm mb-1">{message.content}</p>
