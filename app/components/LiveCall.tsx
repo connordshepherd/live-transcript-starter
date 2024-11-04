@@ -273,8 +273,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       setTimeout(() => {
         const finalRecap: ChatMessage = {
           type: 'ai',
-          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap</b></span><br/>• Discussed Excel PivotTables for sales analysis<br/>• Reviewed Salesforce integration options<br/>• Next steps: Schedule follow-up demo next week",
-          summary: "Key Action Item: David will send over the integration requirements document by Friday.",
+          excerpt: "📝 <span style='color: #98fc03'><b>Meeting Recap (So Far)</b></span><br/><span><b>Pain Points</b></span><br/>• Reconciling contractor payments<br/>• Equity compensation documentation<br/>• Compliance concerns as they've started hiring in multiple states<br/><span><b>Requirements:</b></span><br/>• Automated tax filing for multiple states<br/>• Better reporting capabilities for budgeting and forecasting",
+          summary: "Suggested Next Step: Share case studies of ecommerce companies",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           source: 'Meeting Transcript',
         }
