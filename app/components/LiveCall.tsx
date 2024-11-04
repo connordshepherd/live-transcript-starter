@@ -345,12 +345,13 @@ export default function LiveCall({ transcript }: LiveCallProps) {
         </div>
         <div className="flex items-center space-x-2">
           <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={toggleListening}
-            >
-              {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            </Button>
+            variant="outline" 
+            size="icon"
+            className="border-input bg-background hover:bg-accent hover:text-accent-foreground"
+            onClick={toggleListening}
+          >
+            {isAudioOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+          </Button>
           <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
         </div>
       </header>
