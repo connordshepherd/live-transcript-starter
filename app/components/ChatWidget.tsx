@@ -66,7 +66,7 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
               {message.type === 'user' ? (
                 <>
                   <p>{message.content}</p>
-                  <p className="text-xs text-primary-foreground/70">{message.timestamp}</p>
+                  <p className="text-sm text-primary-foreground/70">{message.timestamp}</p>
                 </>
               ) : (
                 <>
@@ -83,10 +83,15 @@ export default function ChatWidget({ onSendMessage, messages, isLoading }: ChatW
                         {message.source && <span>Source: {message.source}</span>}
                       </div>
                       {!message.isDefault && (
-                        <div className="flex justify-between flex-wrap">
+                        <div className="flex justify-between flex-wrap mt-3 gap-2">
                           {(message.source === 'Meeting Transcript' ? transcriptActionButtons : defaultActionButtons)
                             .map((button, buttonIndex) => (
-                              <Button key={buttonIndex} variant="ghost" size="sm" className="h-6 text-xs px-2 py-0">
+                              <Button 
+                                key={buttonIndex} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 text-xs px-2"
+                              >
                                 {button.icon}
                                 {button.label}
                               </Button>
