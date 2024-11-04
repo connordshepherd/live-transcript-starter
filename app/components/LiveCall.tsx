@@ -426,10 +426,9 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       <footer className="mt-4">
         <form onSubmit={(e) => {
           e.preventDefault();
-          const input = e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement;
-          if (input.value.trim()) {
-            handleSendMessage(input.value);
-            input.value = '';
+          if (inputValue.trim()) {
+            handleSendMessage(inputValue);
+            setInputValue(''); // Clear the input by updating state
           }
         }} className="flex space-x-2">
           <Button
