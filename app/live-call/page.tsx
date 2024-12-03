@@ -17,6 +17,8 @@ import {
 interface TranscriptEntry {
   speaker: number;
   text: string;
+  isUtteranceEnd?: boolean;
+  lastWordEnd?: number;
 }
 
 export default function LiveCallPage() {
@@ -76,9 +78,24 @@ export default function LiveCallPage() {
       }
     };
 
+    const onUtteranceEnd = (data: any) => {
+      setTranscript(prev => {
+        const lastEntry = prev[prev.length - 1];
+        if (lastEntry) {
+          return [...prev.slice(0, -1), {
+            ...lastEntry,
+            isUtteranceEnd: true,
+            lastWordEnd: data.last_word_end
+          }];
+        }
+        return prev;
+      });
+    };
+
     // Add event listeners when connection is open
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      connection.addListener('UtteranceEnd', onUtteranceEnd);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
       startMicrophone();
     }
@@ -86,6 +103,7 @@ export default function LiveCallPage() {
     // Clean up event listeners on unmount
     return () => {
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      connection.removeListener('UtteranceEnd', onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -21,6 +21,8 @@ const SoundwaveAnimation = () => (
 interface TranscriptEntry {
   speaker: number;
   text: string;
+  isUtteranceEnd?: boolean;
+  lastWordEnd?: number;
 }
 
 // Define the props type for the LiveCall component
@@ -410,11 +412,19 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
-                {/* Render transcript entries */}
                 {transcript.map((entry, index) => (
                   <div key={index} className="mb-2">
-                    <span className="font-bold text-card-foreground">SPEAKER {entry.speaker}: </span>
-                    <span className="text-card-foreground">{entry.text}</span>
+                    <span className="font-bold text-card-foreground">
+                      SPEAKER {entry.speaker}:
+                    </span>
+                    <span className="text-card-foreground">
+                      {entry.text}
+                    </span>
+                    {entry.isUtteranceEnd && (
+                      <span className="ml-2 text-sm text-yellow-500">
+                        [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
