@@ -36,7 +36,7 @@ export default function LiveCallPage() {
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
-        model: "nova-2",
+        model: "nova-2-meeting",
         interim_results: true,
         smart_format: true,
         filler_words: true,
