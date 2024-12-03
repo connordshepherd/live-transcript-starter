@@ -7,6 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
+//import { TranscriptEntry } from "../types/transcript"; 
+//import { ConsolidatedMessage } from "../types/consolidatedMessage";
+//import { DisplayEntry } from "../types/displayEntry";
+
+type TranscriptEntry = {
+  type: 'transcript';
+  speaker: number;
+  text: string;
+  isUtteranceEnd?: boolean;
+  lastWordEnd?: number;
+};
+
+export type ConsolidatedMessage = {
+  type: 'consolidated';
+  speaker: number;
+  text: string;
+  trigger: 'utterance_end' | 'speaker_change';
+};
+
+export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (
@@ -17,15 +37,9 @@ const SoundwaveAnimation = () => (
   </div>
 );
 
-// Define the type for a transcript entry
-interface TranscriptEntry {
-  speaker: number;
-  text: string;
-}
-
 // Define the props type for the LiveCall component
 interface LiveCallProps {
-  transcript: TranscriptEntry[];
+  transcript: DisplayEntry[];
 }
 
 interface ChatMessage {
@@ -410,13 +424,46 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
-                {/* Render transcript entries */}
-                {transcript.map((entry, index) => (
-                  <div key={index} className="mb-2">
-                    <span className="font-bold text-card-foreground">SPEAKER {entry.speaker}: </span>
-                    <span className="text-card-foreground">{entry.text}</span>
-                  </div>
-                ))}
+                {transcript.map((entry, index) => {
+                  //console.log("Rendering entry:", entry); // Add this line
+  
+                  const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
+                    entry.type === 'transcript';
+                  const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
+                    entry.type === 'consolidated';
+
+                  if (isTranscriptEntry(entry)) {
+                    return (
+                      <div key={index} className="mb-2">
+                        <span className="font-bold text-card-foreground">
+                          SPEAKER {entry.speaker}:
+                        </span>
+                        <span className="text-card-foreground">
+                          {entry.text}
+                        </span>
+                        {entry.isUtteranceEnd && (
+                          <span className="ml-2 text-sm text-yellow-500">
+                            [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
+                          </span>
+                        )}
+                      </div>
+                    );
+                  } else if (isConsolidatedMessage(entry)) {
+                    console.log("Found consolidated message:", entry); // Add this line
+                    return (
+                      <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
+                        <span className="font-bold">
+                          CONSOLIDATED (SPEAKER {entry.speaker}) - 
+                          {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
+                        </span>
+                        <span className="block mt-1">
+                          {entry.text}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
               </div>
             </ScrollArea>
           </TabsContent>
