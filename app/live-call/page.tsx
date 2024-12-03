@@ -42,7 +42,7 @@ export default function LiveCallPage() {
         interim_results: true,
         smart_format: true,
         filler_words: true,
-        utterance_end_ms: 3000,
+        utterance_end_ms: 1200,
         diarize: true,
       });
     }
