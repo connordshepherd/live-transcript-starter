@@ -106,6 +106,26 @@ export default function LiveCallPage() {
       }
     };
 
+    const handleConsolidation = (trigger: 'utterance_end' | 'speaker_change', newSpeaker?: number) => {
+      setCurrentCollectedText(currentText => {
+        if (currentText.length > 0) {
+          const consolidatedEntry = {
+            type: 'consolidated' as const,
+            speaker: currentSpeaker,
+            text: currentText.join(' '),
+            trigger
+          };
+    
+          setTranscript(prev => [...prev, consolidatedEntry]);
+        }
+        return []; // Clear buffer
+      });
+    
+      if (newSpeaker !== undefined) {
+        setCurrentSpeaker(newSpeaker);
+      }
+    };
+
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
@@ -117,7 +137,12 @@ export default function LiveCallPage() {
         };
     
         if (data.is_final) {
-          console.log("Adding to collected text:", newEntry.text);
+          // Check for speaker change first
+          if (newEntry.speaker !== currentSpeaker) {
+            handleConsolidation('speaker_change', newEntry.speaker);
+          }
+    
+          // Add new text to collection buffer
           setCurrentCollectedText(prev => [...prev, newEntry.text]);
           setTranscript(prev => [...prev, newEntry]);
           setInterimTranscript([]);
@@ -128,8 +153,6 @@ export default function LiveCallPage() {
     };
     
     const onUtteranceEnd = (data: any) => {
-      console.log("Utterance end detected", data);
-      
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
@@ -142,22 +165,7 @@ export default function LiveCallPage() {
         return prev;
       });
     
-      // Handle consolidated message separately
-      setCurrentCollectedText(currentText => {
-        console.log("Current collected text at utterance end:", currentText);
-        
-        const consolidatedEntry = {
-          type: 'consolidated' as const,
-          speaker: currentSpeaker,
-          text: currentText.join(' '),
-          trigger: 'utterance_end' as const
-        };
-    
-        setTranscript(prev => [...prev, consolidatedEntry]);
-        
-        // Return empty array to clear the buffer
-        return [];
-      });
+      handleConsolidation('utterance_end');
     };
 
     // Add event listeners when connection is open
