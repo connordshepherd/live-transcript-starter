@@ -425,11 +425,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
                 {transcript.map((entry, index) => {
-                  // Type guard functions
+                  console.log("Rendering entry:", entry); // Add this line
+  
                   const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
-                    'isUtteranceEnd' in entry;
+                    entry.type === 'transcript';
                   const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
-                    'trigger' in entry;
+                    entry.type === 'consolidated';
 
                   if (isTranscriptEntry(entry)) {
                     return (
@@ -448,6 +449,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                       </div>
                     );
                   } else if (isConsolidatedMessage(entry)) {
+                    console.log("Found consolidated message:", entry); // Add this line
                     return (
                       <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
                         <span className="font-bold">
@@ -460,7 +462,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                       </div>
                     );
                   }
-                  return null; // Handle any unexpected cases
+                  return null;
                 })}
               </div>
             </ScrollArea>

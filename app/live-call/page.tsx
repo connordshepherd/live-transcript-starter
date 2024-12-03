@@ -47,6 +47,11 @@ export default function LiveCallPage() {
   // Create a consolidated message when an utterance ends or a speaker changes
   const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
     if (currentCollectedText.length > 0) {
+      console.log("Creating consolidated message:", {
+        text: currentCollectedText.join(' '),
+        trigger,
+        speaker: currentSpeaker
+      });
       const consolidatedEntry: ConsolidatedMessage = {
         type: 'consolidated',
         speaker: currentSpeaker,
