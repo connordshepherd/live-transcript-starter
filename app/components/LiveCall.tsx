@@ -7,9 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
-import { TranscriptEntry } from "../types/transcript"; 
-import { ConsolidatedMessage } from "../types/consolidatedMessage";
-import { DisplayEntry } from "../types/displayEntry";
+//import { TranscriptEntry } from "../types/transcript"; 
+//import { ConsolidatedMessage } from "../types/consolidatedMessage";
+//import { DisplayEntry } from "../types/displayEntry";
+
+type TranscriptEntry = {
+  type: 'transcript';
+  speaker: number;
+  text: string;
+  isUtteranceEnd?: boolean;
+  lastWordEnd?: number;
+};
+
+export type ConsolidatedMessage = {
+  type: 'consolidated';
+  speaker: number;
+  text: string;
+  trigger: 'utterance_end' | 'speaker_change';
+};
+
+export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (

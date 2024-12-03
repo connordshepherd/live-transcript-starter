@@ -22,9 +22,18 @@ type TranscriptEntry = {
   lastWordEnd?: number;
 };
 
+export type ConsolidatedMessage = {
+  type: 'consolidated';
+  speaker: number;
+  text: string;
+  trigger: 'utterance_end' | 'speaker_change';
+};
+
+export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+
 //import { TranscriptEntry } from "../types/transcript";
-import { ConsolidatedMessage } from "../types/consolidatedMessage";
-import { DisplayEntry } from "../types/displayEntry";
+//import { ConsolidatedMessage } from "../types/consolidatedMessage";
+//import { DisplayEntry } from "../types/displayEntry";
 
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
