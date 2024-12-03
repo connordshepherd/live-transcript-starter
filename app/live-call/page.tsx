@@ -106,6 +106,7 @@ export default function LiveCallPage() {
       }
     };
 
+    // rechecking commit
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
@@ -117,22 +118,8 @@ export default function LiveCallPage() {
         };
     
         if (data.is_final) {
-          // Add debug logging
-          console.log("Final transcript:", {
-            newSpeaker: newEntry.speaker,
-            currentSpeaker,
-            text: newEntry.text
-          });
-          
+          // Add to the collection buffer
           setCurrentCollectedText(prev => [...prev, newEntry.text]);
-
-          // Check for speaker change
-          if (newEntry.speaker !== currentSpeaker) {
-            console.log("Speaker changed from", currentSpeaker, "to", newEntry.speaker);
-            createConsolidatedMessage('speaker_change');
-            setCurrentSpeaker(newEntry.speaker);
-          }
-          
           setTranscript(prev => [...prev, newEntry]);
           setInterimTranscript([]);
         } else {
@@ -147,16 +134,16 @@ export default function LiveCallPage() {
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
-          // Create consolidated message with the current text plus the last entry
+          // Create consolidated message from the buffer
           const consolidatedEntry = {
             type: 'consolidated' as const,
             speaker: currentSpeaker,
-            text: [...currentCollectedText, lastEntry.text].join(' '),
+            text: currentCollectedText.join(' '),  // Join all collected text
             trigger: 'utterance_end' as const
           };
           
-          // Return both the marked utterance and the consolidated message
-          return [
+          // Mark the utterance end and add consolidated message
+          const result = [
             ...prev.slice(0, -1),
             {
               ...lastEntry,
@@ -165,12 +152,14 @@ export default function LiveCallPage() {
             },
             consolidatedEntry
           ];
+    
+          // Clear the buffer AFTER creating consolidated message
+          setCurrentCollectedText([]);
+          
+          return result;
         }
         return prev;
       });
-      
-      // Clear the collected text after consolidating
-      setCurrentCollectedText([]);
     };
 
     // Add event listeners when connection is open
