@@ -99,16 +99,24 @@ export default function LiveCallPage() {
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
-        const newEntry: TranscriptEntry = {
-          type: 'transcript' as const,  // Make sure to include this
+        const newEntry = {
+          type: 'transcript' as const,
           speaker: words[0].speaker || 0,
           text: words.map(word => word.word).join(' '),
           isUtteranceEnd: false
         };
     
         if (data.is_final) {
+          // Add debug logging
+          console.log("Final transcript:", {
+            newSpeaker: newEntry.speaker,
+            currentSpeaker,
+            text: newEntry.text
+          });
+          
           // Check for speaker change
           if (newEntry.speaker !== currentSpeaker) {
+            console.log("Speaker changed from", currentSpeaker, "to", newEntry.speaker);
             createConsolidatedMessage('speaker_change');
             setCurrentSpeaker(newEntry.speaker);
           }
@@ -123,6 +131,7 @@ export default function LiveCallPage() {
     };
     
     const onUtteranceEnd = (data: any) => {
+      console.log("Utterance end detected", data); // Add debug logging
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
