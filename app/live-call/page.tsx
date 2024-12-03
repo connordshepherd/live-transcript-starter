@@ -14,7 +14,15 @@ import {
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
 
-import { TranscriptEntry } from "../types/transcript";
+type TranscriptEntry = {
+  type: 'transcript';
+  speaker: number;
+  text: string;
+  isUtteranceEnd?: boolean;
+  lastWordEnd?: number;
+};
+
+//import { TranscriptEntry } from "../types/transcript";
 import { ConsolidatedMessage } from "../types/consolidatedMessage";
 import { DisplayEntry } from "../types/displayEntry";
 
