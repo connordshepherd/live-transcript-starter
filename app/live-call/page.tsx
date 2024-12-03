@@ -16,7 +16,7 @@ import {
 
 import { TranscriptEntry } from "../types/transcript";
 import { ConsolidatedMessage } from "../types/consolidatedMessage";
-type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+import { DisplayEntry } from "../types/displayEntry";
 
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);

@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
 import { TranscriptEntry } from "../types/transcript";
 import { ConsolidatedMessage } from "../types/consolidatedMessage";
-type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+import { DisplayEntry } from "../types/displayEntry";
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (
