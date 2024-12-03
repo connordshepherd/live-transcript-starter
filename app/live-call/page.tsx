@@ -46,20 +46,30 @@ export default function LiveCallPage() {
 
   // Create a consolidated message when an utterance ends or a speaker changes
   const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
+    console.log("Attempting to create consolidated message", {
+      currentCollectedText,
+      trigger,
+      speaker: currentSpeaker
+    });
+    
     if (currentCollectedText.length > 0) {
-      console.log("Creating consolidated message:", {
-        text: currentCollectedText.join(' '),
-        trigger,
-        speaker: currentSpeaker
-      });
-      const consolidatedEntry: ConsolidatedMessage = {
-        type: 'consolidated',
+      const consolidatedEntry = {
+        type: 'consolidated' as const,
         speaker: currentSpeaker,
         text: currentCollectedText.join(' '),
         trigger
       };
-      setTranscript(prev => [...prev, consolidatedEntry]);
+      console.log("Created consolidated entry:", consolidatedEntry);
+      
+      setTranscript(prev => {
+        console.log("Previous transcript:", prev);
+        const newTranscript = [...prev, consolidatedEntry];
+        console.log("New transcript:", newTranscript);
+        return newTranscript;
+      });
       setCurrentCollectedText([]);
+    } else {
+      console.log("No text to consolidate");
     }
   };
 
@@ -131,11 +141,15 @@ export default function LiveCallPage() {
     };
     
     const onUtteranceEnd = (data: any) => {
-      console.log("Utterance end detected", data); // Add debug logging
+      console.log("Utterance end detected", data);
+      
+      // First create the consolidated message
+      createConsolidatedMessage('utterance_end');
+      
+      // Then update the transcript with the utterance end marker
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
-          createConsolidatedMessage('utterance_end');
           return [...prev.slice(0, -1), {
             ...lastEntry,
             isUtteranceEnd: true,
