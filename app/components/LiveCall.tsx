@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
+import { TranscriptEntry } from "../types/transcript";
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (
@@ -16,14 +17,6 @@ const SoundwaveAnimation = () => (
     <div className="bar"></div>
   </div>
 );
-
-// Define the type for a transcript entry
-interface TranscriptEntry {
-  speaker: number;
-  text: string;
-  isUtteranceEnd?: boolean;
-  lastWordEnd?: number;
-}
 
 // Define the props type for the LiveCall component
 interface LiveCallProps {

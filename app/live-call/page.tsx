@@ -14,12 +14,7 @@ import {
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
 
-interface TranscriptEntry {
-  speaker: number;
-  text: string;
-  isUtteranceEnd?: boolean;
-  lastWordEnd?: number;
-}
+import { TranscriptEntry } from "../types/transcript";
 
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
