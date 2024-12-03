@@ -117,18 +117,10 @@ export default function LiveCallPage() {
         };
     
         if (data.is_final) {
-          // Add debug logging
-          console.log("Final transcript:", {
-            newSpeaker: newEntry.speaker,
-            currentSpeaker,
-            text: newEntry.text
-          });
-          
+          // Add to collected text
           setCurrentCollectedText(prev => [...prev, newEntry.text]);
-
-          // Check for speaker change
+          
           if (newEntry.speaker !== currentSpeaker) {
-            console.log("Speaker changed from", currentSpeaker, "to", newEntry.speaker);
             createConsolidatedMessage('speaker_change');
             setCurrentSpeaker(newEntry.speaker);
           }
@@ -142,16 +134,16 @@ export default function LiveCallPage() {
     };
     
     const onUtteranceEnd = (data: any) => {
-      console.log("Utterance end detected", data);
+      console.log("Utterance end detected", data, "Current collected text:", currentCollectedText);
       
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
-          // Create consolidated message with the current text plus the last entry
+          // Create consolidated message with ALL collected text
           const consolidatedEntry = {
             type: 'consolidated' as const,
             speaker: currentSpeaker,
-            text: [...currentCollectedText, lastEntry.text].join(' '),
+            text: currentCollectedText.join(' '), // Join all collected text
             trigger: 'utterance_end' as const
           };
           
