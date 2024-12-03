@@ -8,6 +8,8 @@ import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
 import { TranscriptEntry } from "../types/transcript";
+import { ConsolidatedMessage } from "../types/consolidatedMessage";
+type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (
@@ -20,7 +22,7 @@ const SoundwaveAnimation = () => (
 
 // Define the props type for the LiveCall component
 interface LiveCallProps {
-  transcript: TranscriptEntry[];
+  transcript: DisplayEntry[];
 }
 
 interface ChatMessage {
@@ -405,21 +407,37 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
-                {transcript.map((entry, index) => (
-                  <div key={index} className="mb-2">
-                    <span className="font-bold text-card-foreground">
-                      SPEAKER {entry.speaker}:
-                    </span>
-                    <span className="text-card-foreground">
-                      {entry.text}
-                    </span>
-                    {entry.isUtteranceEnd && (
-                      <span className="ml-2 text-sm text-yellow-500">
-                        [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {transcript.map((entry, index) => {
+                  if (entry.type === 'transcript') {
+                    return (
+                      <div key={index} className="mb-2">
+                        <span className="font-bold text-card-foreground">
+                          SPEAKER {entry.speaker}:
+                        </span>
+                        <span className="text-card-foreground">
+                          {entry.text}
+                        </span>
+                        {entry.isUtteranceEnd && (
+                          <span className="ml-2 text-sm text-yellow-500">
+                            [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
+                          </span>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
+                        <span className="font-bold">
+                          CONSOLIDATED (SPEAKER {entry.speaker}) - 
+                          {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
+                        </span>
+                        <span className="block mt-1">
+                          {entry.text}
+                        </span>
+                      </div>
+                    );
+                  }
+                })}
               </div>
             </ScrollArea>
           </TabsContent>

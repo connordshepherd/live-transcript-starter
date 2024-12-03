@@ -3,4 +3,4 @@ export interface TranscriptEntry {
     text: string;
     isUtteranceEnd?: boolean;
     lastWordEnd?: number;
-  }
+}

@@ -15,13 +15,31 @@ import {
 } from "../context/MicrophoneContextProvider";
 
 import { TranscriptEntry } from "../types/transcript";
+import { ConsolidatedMessage } from "../types/consolidatedMessage";
+type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 export default function LiveCallPage() {
-  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
+  const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
+  const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Create a consolidated message when an utterance ends or a speaker changes
+  const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
+    if (currentCollectedText.length > 0) {
+      const consolidatedEntry: ConsolidatedMessage = {
+        type: 'consolidated',
+        speaker: currentSpeaker,
+        text: currentCollectedText.join(' '),
+        trigger
+      };
+      setTranscript(prev => [...prev, consolidatedEntry]);
+      setCurrentCollectedText([]);
+    }
+  };
 
   // Set up microphone on component mount
   useEffect(() => {
@@ -60,11 +78,19 @@ export default function LiveCallPage() {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
         const newEntry: TranscriptEntry = {
+          type: 'transcript',  // Add this
           speaker: words[0].speaker || 0,
           text: words.map(word => word.word).join(' ')
         };
-
+    
         if (data.is_final) {
+          // Check for speaker change
+          if (newEntry.speaker !== currentSpeaker) {
+            createConsolidatedMessage('speaker_change');
+            setCurrentSpeaker(newEntry.speaker);
+          }
+          
+          setCurrentCollectedText(prev => [...prev, newEntry.text]);
           setTranscript(prev => [...prev, newEntry]);
           setInterimTranscript([]);
         } else {
@@ -72,11 +98,12 @@ export default function LiveCallPage() {
         }
       }
     };
-
+    
     const onUtteranceEnd = (data: any) => {
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
-        if (lastEntry) {
+        if (lastEntry && lastEntry.type === 'transcript') {
+          createConsolidatedMessage('utterance_end');
           return [...prev.slice(0, -1), {
             ...lastEntry,
             isUtteranceEnd: true,
@@ -131,5 +158,8 @@ export default function LiveCallPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
-  return <LiveCall transcript={[...transcript, ...interimTranscript]} />;
+  return <LiveCall transcript={[
+    ...transcript, 
+    ...interimTranscript.map(t => ({ ...t, type: 'transcript' as const }))
+  ]} />;
 }
