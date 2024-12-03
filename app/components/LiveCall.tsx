@@ -425,7 +425,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
                 {transcript.map((entry, index) => {
-                  console.log("Rendering entry:", entry); // Add this line
+                  //console.log("Rendering entry:", entry); // Add this line
   
                   const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
                     entry.type === 'transcript';

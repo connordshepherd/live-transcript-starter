@@ -124,6 +124,8 @@ export default function LiveCallPage() {
             text: newEntry.text
           });
           
+          setCurrentCollectedText(prev => [...prev, newEntry.text]);
+
           // Check for speaker change
           if (newEntry.speaker !== currentSpeaker) {
             console.log("Speaker changed from", currentSpeaker, "to", newEntry.speaker);
@@ -131,7 +133,6 @@ export default function LiveCallPage() {
             setCurrentSpeaker(newEntry.speaker);
           }
           
-          setCurrentCollectedText(prev => [...prev, newEntry.text]);
           setTranscript(prev => [...prev, newEntry]);
           setInterimTranscript([]);
         } else {
@@ -143,21 +144,33 @@ export default function LiveCallPage() {
     const onUtteranceEnd = (data: any) => {
       console.log("Utterance end detected", data);
       
-      // First create the consolidated message
-      createConsolidatedMessage('utterance_end');
-      
-      // Then update the transcript with the utterance end marker
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
         if (lastEntry && lastEntry.type === 'transcript') {
-          return [...prev.slice(0, -1), {
-            ...lastEntry,
-            isUtteranceEnd: true,
-            lastWordEnd: data.last_word_end
-          }];
+          // Create consolidated message with the current text plus the last entry
+          const consolidatedEntry = {
+            type: 'consolidated' as const,
+            speaker: currentSpeaker,
+            text: [...currentCollectedText, lastEntry.text].join(' '),
+            trigger: 'utterance_end' as const
+          };
+          
+          // Return both the marked utterance and the consolidated message
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastEntry,
+              isUtteranceEnd: true,
+              lastWordEnd: data.last_word_end
+            },
+            consolidatedEntry
+          ];
         }
         return prev;
       });
+      
+      // Clear the collected text after consolidating
+      setCurrentCollectedText([]);
     };
 
     // Add event listeners when connection is open
