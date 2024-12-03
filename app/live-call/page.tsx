@@ -77,11 +77,12 @@ export default function LiveCallPage() {
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
-        const newEntry = {
-          type: 'transcript' as const,
+        const newEntry: TranscriptEntry = {
+          type: 'transcript',  // Make sure to include this
           speaker: words[0].speaker || 0,
-          text: words.map(word => word.word).join(' ')
-        } as TranscriptEntry;
+          text: words.map(word => word.word).join(' '),
+          isUtteranceEnd: false
+        };
     
         if (data.is_final) {
           // Check for speaker change
