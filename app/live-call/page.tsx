@@ -159,7 +159,13 @@ export default function LiveCallPage() {
   }, [microphoneState, connectionState]);
 
   return <LiveCall transcript={[
-    ...transcript, 
-    ...interimTranscript.map(t => ({ ...t, type: 'transcript' as const }))
+    ...transcript,
+    ...interimTranscript.map(t => ({
+      type: 'transcript' as const,
+      speaker: t.speaker,
+      text: t.text,
+      isUtteranceEnd: t.isUtteranceEnd,
+      lastWordEnd: t.lastWordEnd
+    }))
   ]} />;
 }

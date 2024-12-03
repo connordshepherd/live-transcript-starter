@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mic, MicOff, Phone, PhoneOff, Moon, Plus } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatWidget from './ChatWidget'
-import { TranscriptEntry } from "../types/transcript";
+import { TranscriptEntry } from "../types/transcript"; 
 import { ConsolidatedMessage } from "../types/consolidatedMessage";
 import { DisplayEntry } from "../types/displayEntry";
 
