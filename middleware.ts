@@ -1,4 +1,7 @@
+// middleware.ts
+import NextAuth from 'next-auth';
 import { NextResponse, type NextRequest } from "next/server";
+import { authConfig } from '@/app/(auth)/auth.config';
 
 const corsOptions: {
   allowedMethods: string[];
@@ -15,28 +18,20 @@ const corsOptions: {
   maxAge:
     (process.env?.PREFLIGHT_MAX_AGE &&
       parseInt(process.env?.PREFLIGHT_MAX_AGE)) ||
-    undefined, // 60 * 60 * 24 * 30, // 30 days
+    undefined,
   credentials: process.env?.CREDENTIALS == "true",
 };
 
-/**
- * Middleware function that handles CORS configuration for API routes.
- *
- * This middleware function is responsible for setting the appropriate CORS headers
- * on the response, based on the configured CORS options. It checks the origin of
- * the request and sets the `Access-Control-Allow-Origin` header accordingly. It
- * also sets the other CORS-related headers, such as `Access-Control-Allow-Credentials`,
- * `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, and
- * `Access-Control-Expose-Headers`.
- *
- * The middleware function is configured to be applied to all API routes, as defined
- * by the `config` object at the end of the file.
- */
-export function middleware(request: NextRequest) {
-  // Response
+// Create the auth middleware
+const authMiddleware = NextAuth(authConfig).auth;
+
+// Export the auth middleware directly
+export default authMiddleware;
+
+// Add CORS headers to the response
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // Allowed origins check
   const origin = request.headers.get("origin") ?? "";
   if (
     corsOptions.allowedOrigins.includes("*") ||
@@ -45,7 +40,6 @@ export function middleware(request: NextRequest) {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  // Set default CORS headers
   response.headers.set(
     "Access-Control-Allow-Credentials",
     corsOptions.credentials.toString()
@@ -67,11 +61,15 @@ export function middleware(request: NextRequest) {
     corsOptions.maxAge?.toString() ?? ""
   );
 
-  // Return
   return response;
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: "/api/authenticate",
+  matcher: [
+    '/api/authenticate',
+    '/', 
+    '/login',
+    '/register',
+    '/api/:path*'
+  ]
 };
