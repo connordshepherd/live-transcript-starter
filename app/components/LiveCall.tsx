@@ -450,9 +450,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
-                {transcript.map((entry, index) => {
-                  //console.log("Rendering entry:", entry); // Add this line
-  
+                {transcript.map(async (entry, index) => {
                   const messageId = entry.id || nextMessageId;
                   
                   const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
@@ -480,7 +478,7 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                     // Get summary for this message if we don't have one yet
                     const existingSummary = summaries.find(s => s.messageId === messageId);
                     if (!existingSummary && entry.text) {
-                      getSummary(entry.text, messageId);
+                      await getSummary(entry.text, messageId);
                       setNextMessageId(prev => prev + 1);
                     }
       
