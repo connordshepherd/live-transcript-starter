@@ -450,58 +450,61 @@ export default function LiveCall({ transcript }: LiveCallProps) {
           <TabsContent value="transcript" className="flex-grow">
             <ScrollArea className="h-[calc(100vh-250px)]">
               <div className="space-y-4 p-4">
-                {transcript.map(async (entry, index) => {
-                  const messageId = entry.id || nextMessageId;
-                  
-                  const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
-                    entry.type === 'transcript';
-                  const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
-                    entry.type === 'consolidated';
+              {transcript.map((entry, index) => {
+                const messageId = entry.id || nextMessageId;
+                
+                const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
+                  entry.type === 'transcript';
+                const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
+                  entry.type === 'consolidated';
 
-                  if (isTranscriptEntry(entry)) {
-                    return (
-                      <div key={index} className="mb-2">
-                        <span className="font-bold text-card-foreground">
-                          SPEAKER {entry.speaker}:
+                if (isTranscriptEntry(entry)) {
+                  return (
+                    <div key={index} className="mb-2">
+                      <span className="font-bold text-card-foreground">
+                        SPEAKER {entry.speaker}:
+                      </span>
+                      <span className="text-card-foreground">
+                        {entry.text}
+                      </span>
+                      {entry.isUtteranceEnd && (
+                        <span className="ml-2 text-sm text-yellow-500">
+                          [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
                         </span>
-                        <span className="text-card-foreground">
-                          {entry.text}
-                        </span>
-                        {entry.isUtteranceEnd && (
-                          <span className="ml-2 text-sm text-yellow-500">
-                            [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
-                          </span>
-                        )}
-                      </div>
-                    );
-                  } else if (isConsolidatedMessage(entry)) {
-                    // Get summary for this message if we don't have one yet
-                    const existingSummary = summaries.find(s => s.messageId === messageId);
-                    if (!existingSummary && entry.text) {
-                      await getSummary(entry.text, messageId);
+                      )}
+                    </div>
+                  );
+                } else if (isConsolidatedMessage(entry)) {
+                  // Get summary for this message if we don't have one yet
+                  const existingSummary = summaries.find(s => s.messageId === messageId);
+                  if (!existingSummary && entry.text) {
+                    // Use useEffect to handle the async operation
+                    React.useEffect(() => {
+                      getSummary(entry.text, messageId);
                       setNextMessageId(prev => prev + 1);
-                    }
-      
-                    return (
-                      <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
-                        <span className="font-bold">
-                          CONSOLIDATED (SPEAKER {entry.speaker}) - 
-                          {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
-                        </span>
-                        <span className="block mt-1">
-                          {entry.text}
-                        </span>
-                        {existingSummary && (
-                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                            <span className="font-bold">Summary:</span>
-                            <span className="block mt-1">{existingSummary.summary}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
+                    }, [entry.text, messageId]);
                   }
-                  return null;
-                })}
+
+                  return (
+                    <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
+                      <span className="font-bold">
+                        CONSOLIDATED (SPEAKER {entry.speaker}) - 
+                        {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
+                      </span>
+                      <span className="block mt-1">
+                        {entry.text}
+                      </span>
+                      {existingSummary && (
+                        <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                          <span className="font-bold">Summary:</span>
+                          <span className="block mt-1">{existingSummary.summary}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })}
               </div>
             </ScrollArea>
           </TabsContent>
