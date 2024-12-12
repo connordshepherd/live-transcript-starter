@@ -70,6 +70,7 @@ export const config = {
     '/', 
     '/login',
     '/register',
-    '/api/:path*'
+    '/api/:path*',
+    '/live-call',
   ]
 };

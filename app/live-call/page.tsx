@@ -14,6 +14,9 @@ import {
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
 
+import { auth } from '@/app/(auth)/auth';
+import { redirect } from 'next/navigation';
+
 type TranscriptEntry = {
   type: 'transcript';
   speaker: number;
@@ -43,6 +46,11 @@ export default function LiveCallPage() {
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
+  const session = await auth();
+
+  if (!session) {
+    redirect('/login');
+  }
 
   // Create a consolidated message when an utterance ends or a speaker changes
   const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {

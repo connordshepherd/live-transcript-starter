@@ -19,6 +19,11 @@ type TranscriptEntry = {
   lastWordEnd?: number;
 };
 
+type MessageSummary = {
+  messageId: number;
+  summary: string;
+};
+
 export type ConsolidatedMessage = {
   type: 'consolidated';
   speaker: number;
@@ -26,7 +31,9 @@ export type ConsolidatedMessage = {
   trigger: 'utterance_end' | 'speaker_change';
 };
 
-export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+export type DisplayEntry = (TranscriptEntry | ConsolidatedMessage) & {
+  id?: number;
+};
 
 // Component for the soundwave animation
 const SoundwaveAnimation = () => (
@@ -85,6 +92,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
   const [isLoading, setIsLoading] = useState(false)
   const chatScrollAreaRef = useRef<HTMLDivElement>(null)
   const [inputValue, setInputValue] = useState('')
+  const [summaries, setSummaries] = useState<MessageSummary[]>([]);
+  const [nextMessageId, setNextMessageId] = useState(1);
 
   const scrollToBottom = () => {
     if (chatScrollAreaRef.current) {
@@ -94,6 +103,23 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       }
     }
   }
+
+  // Add function to get summary for consolidated messages
+  const getSummary = async (text: string, messageId: number) => {
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript: text }),
+      });
+      const data = await response.json();
+      setSummaries(prev => [...prev, { messageId, summary: data.summary }]);
+    } catch (error) {
+      console.error('Error getting summary:', error);
+    }
+  };
 
   // Handle when Excel is mentioned in the transcript
   const handleExcelDetected = () => {
@@ -427,6 +453,8 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                 {transcript.map((entry, index) => {
                   //console.log("Rendering entry:", entry); // Add this line
   
+                  const messageId = entry.id || nextMessageId;
+                  
                   const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
                     entry.type === 'transcript';
                   const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
@@ -449,7 +477,13 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                       </div>
                     );
                   } else if (isConsolidatedMessage(entry)) {
-                    console.log("Found consolidated message:", entry); // Add this line
+                    // Get summary for this message if we don't have one yet
+                    const existingSummary = summaries.find(s => s.messageId === messageId);
+                    if (!existingSummary && entry.text) {
+                      getSummary(entry.text, messageId);
+                      setNextMessageId(prev => prev + 1);
+                    }
+      
                     return (
                       <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
                         <span className="font-bold">
@@ -459,6 +493,12 @@ export default function LiveCall({ transcript }: LiveCallProps) {
                         <span className="block mt-1">
                           {entry.text}
                         </span>
+                        {existingSummary && (
+                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                            <span className="font-bold">Summary:</span>
+                            <span className="block mt-1">{existingSummary.summary}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   }
