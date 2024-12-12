@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import NextAuth from 'next-auth';
 import { authConfig } from '@/app/(auth)/auth.config';
 
+const auth = NextAuth(authConfig).auth;
+
 const corsOptions: {
   allowedMethods: string[];
   allowedOrigins: string[];
@@ -35,33 +37,53 @@ const corsOptions: {
  * by the `config` object at the end of the file.
  */
 // Create an auth middleware instance
-const auth = NextAuth(authConfig).auth;
-
-export async function middleware(request: NextRequest) {
-  // Skip auth for /api/authenticate
-  if (!request.nextUrl.pathname.startsWith('/api/authenticate')) {
-    const authResult = await auth(request);
-    if (authResult) {
-      return authResult;
-    }
+async function corsMiddleware(request: NextRequest, response: NextResponse) {
+  const origin = request.headers.get("origin") ?? "";
+  if (
+    corsOptions.allowedOrigins.includes("*") ||
+    corsOptions.allowedOrigins.includes(origin)
+  ) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  // Continue with your existing CORS logic
-  const response = NextResponse.next();
-  
-  // Your existing CORS headers setup...
-  const origin = request.headers.get("origin") ?? "";
-  // ... rest of your CORS logic
+  response.headers.set(
+    "Access-Control-Allow-Credentials",
+    corsOptions.credentials.toString()
+  );
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    corsOptions.allowedMethods.join(",")
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    corsOptions.allowedHeaders.join(",")
+  );
+  response.headers.set(
+    "Access-Control-Expose-Headers",
+    corsOptions.exposedHeaders.join(",")
+  );
+  response.headers.set(
+    "Access-Control-Max-Age",
+    corsOptions.maxAge?.toString() ?? ""
+  );
 
   return response;
 }
 
-// Update matcher to exclude /api/authenticate from auth but keep CORS
+export async function middleware(request: NextRequest) {
+  // Handle auth
+  const authResponse = await auth(request);
+  
+  // If auth generated a response, add CORS headers to it
+  if (authResponse) {
+    return corsMiddleware(request, authResponse);
+  }
+  
+  // Otherwise, continue with normal response and add CORS headers
+  const response = NextResponse.next();
+  return corsMiddleware(request, response);
+}
+
 export const config = {
-  matcher: [
-    '/',
-    '/login',
-    '/register',
-    '/api/((?!authenticate).*)' // This matches all API routes EXCEPT /api/authenticate
-  ]
+  matcher: ['/', '/api/:path*', '/login', '/register'],
 };
