@@ -31,17 +31,17 @@ export type ConsolidatedMessage = {
 
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
-//import { TranscriptEntry } from "../types/transcript";
-//import { ConsolidatedMessage } from "../types/consolidatedMessage";
-//import { DisplayEntry } from "../types/displayEntry";
-
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
-  const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
+
+  // New state to control audio on/off
+  const [isAudioOn, setIsAudioOn] = useState(false);
+
+  const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
+  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Create a consolidated message when an utterance ends or a speaker changes
@@ -73,38 +73,46 @@ export default function LiveCallPage() {
     }
   };
 
-  // Set up microphone on component mount
+  // Effect to handle starting/stopping microphone & connection based on isAudioOn
   useEffect(() => {
-    setupMicrophone();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isAudioOn) {
+      // If microphone is not setup yet, set it up
+      if (microphoneState === MicrophoneState.NotSetup) {
+        setupMicrophone();
+      }
 
-  // Connect to Deepgram when microphone is ready
-  useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready) {
-      connectToDeepgram({
-        model: "nova-2-meeting",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 1200,
-        diarize: true,
-      });
+      // If microphone is ready and Deepgram connection not open, connect now
+      if (microphoneState === MicrophoneState.Ready && connectionState !== LiveConnectionState.OPEN) {
+        connectToDeepgram({
+          model: "nova-2-meeting",
+          interim_results: true,
+          smart_format: true,
+          filler_words: true,
+          utterance_end_ms: 1200,
+          diarize: true,
+        });
+      }
+
+      // If both microphone ready and connection open, start the microphone
+      if (microphoneState === MicrophoneState.Ready && connectionState === LiveConnectionState.OPEN) {
+        startMicrophone();
+      }
+    } else {
+      // If turning off, stop microphone & disconnect from Deepgram if needed
+      if (microphoneState === MicrophoneState.Open) {
+        stopMicrophone();
+      }
+      if (connection) {
+        disconnectFromDeepgram();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState]);
+  }, [isAudioOn, microphoneState, connectionState]);
 
-  // Set up event listeners for microphone data and transcription events
+  // Event listeners for transcription when isAudioOn is true
   useEffect(() => {
     if (!microphone) return;
     if (!connection) return;
-
-    const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX: Prevent empty packets from being sent
-      if (e.data.size > 0) {
-        connection?.send(e.data);
-      }
-    };
 
     const handleConsolidation = (trigger: 'utterance_end' | 'speaker_change', newSpeaker?: number) => {
       setCurrentCollectedText(currentText => {
@@ -123,6 +131,13 @@ export default function LiveCallPage() {
     
       if (newSpeaker !== undefined) {
         setCurrentSpeaker(newSpeaker);
+      }
+    };
+
+    const onData = (e: BlobEvent) => {
+      // iOS SAFARI FIX: Prevent empty packets from being sent
+      if (e.data.size > 0) {
+        connection?.send(e.data);
       }
     };
 
@@ -168,22 +183,19 @@ export default function LiveCallPage() {
       handleConsolidation('utterance_end');
     };
 
-    // Add event listeners when connection is open
-    if (connectionState === LiveConnectionState.OPEN) {
+    if (isAudioOn && connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.addListener('UtteranceEnd', onUtteranceEnd);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      startMicrophone();
     }
 
-    // Clean up event listeners on unmount
     return () => {
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.removeListener('UtteranceEnd', onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState]);
+  }, [isAudioOn, connectionState, microphone]);
 
   // Manage keep-alive interval for the Deepgram connection
   useEffect(() => {
@@ -212,14 +224,18 @@ export default function LiveCallPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
-  return <LiveCall transcript={[
-    ...transcript,
-    ...interimTranscript.map(t => ({
-      type: 'transcript' as const,
-      speaker: t.speaker,
-      text: t.text,
-      isUtteranceEnd: t.isUtteranceEnd,
-      lastWordEnd: t.lastWordEnd
-    }))
-  ]} />;
+  return <LiveCall
+    transcript={[
+      ...transcript,
+      ...interimTranscript.map(t => ({
+        type: 'transcript' as const,
+        speaker: t.speaker,
+        text: t.text,
+        isUtteranceEnd: t.isUtteranceEnd,
+        lastWordEnd: t.lastWordEnd
+      }))
+    ]}
+    isAudioOn={isAudioOn}
+    onToggleAudio={() => setIsAudioOn(!isAudioOn)}
+  />;
 }
