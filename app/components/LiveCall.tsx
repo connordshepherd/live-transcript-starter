@@ -30,14 +30,23 @@ const SoundwaveAnimation = () => (
   </div>
 );
 
+// Keep the props interface
 interface LiveCallProps {
   transcript: DisplayEntry[];
-  onRunningStateChange: (isRunning: boolean) => void;
 }
 
 // Main LiveCall component
-export default function LiveCall({ transcript, onRunningStateChange }: LiveCallProps) {
-  const [isRunning, setIsRunning] = useState(false)
+export default function LiveCall({ transcript }: LiveCallProps) {
+  // Keep only the necessary state
+  const [isListening, setIsListening] = useState(false)
+  const [isAudioOn, setIsAudioOn] = useState(true)
+  const [isCallActive, setIsCallActive] = useState(false)
+  const [isQuiet, setIsQuiet] = useState(false)
+
+  // Keep only the necessary functions
+  const toggleListening = () => {
+    setIsListening(prevState => !prevState)
+  }
 
   // Keep the styles effect
   React.useEffect(() => {
@@ -50,35 +59,99 @@ export default function LiveCall({ transcript, onRunningStateChange }: LiveCallP
   }, []);
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 bg-background">
-      {/* Simplified header with just the status indicator */}
+      {/* Header - Keep the listening status */}
       <header className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
-          {isRunning ? (
+          {isListening ? (
             <SoundwaveAnimation />
           ) : (
             <div className="w-3 h-3 rounded-full bg-secondary" />
           )}
-          <span className="text-foreground">
-            {isRunning ? 'Transcribing...' : 'Ready'}
-          </span>
+          <span className="text-foreground">{isListening ? 'Listening' : 'Idle'}</span>
         </div>
-        {/* Single control button */}
-        <Button
-          variant={isRunning ? "destructive" : "default"}
-          onClick={() => {
-            const newState = !isRunning;
-            setIsRunning(newState);
-            onRunningStateChange(newState);
-          }}
-        >
-          {isRunning ? 'Pause' : 'Start'}
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="border-input hover:bg-accent hover:text-accent-foreground"
+            onClick={toggleListening}
+          >
+            {isAudioOn ? <Mic className="h-4 w-4 text-foreground" /> : <MicOff className="h-4 w-4 text-foreground" />}
+          </Button>
+          <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
+        </div>
       </header>
 
-      {/* Main content area - transcript */}
+      {/* Call control buttons */}
+      <div className="flex justify-between mb-4">
+        <Button
+          variant={isCallActive ? "destructive" : "default"}
+          onClick={() => setIsCallActive(!isCallActive)}
+        >
+          {isCallActive ? (
+            <>
+              <PhoneOff className="h-4 w-4 mr-2" />
+              End Call
+            </>
+          ) : (
+            <>
+              <Phone className="h-4 w-4 mr-2" />
+              Start Call
+            </>
+          )}
+        </Button>
+        <Button
+          variant={isQuiet ? "secondary" : "outline"}
+          onClick={() => setIsQuiet(!isQuiet)}
+          className="text-foreground"
+        >
+          <Moon className="h-4 w-4 mr-2 text-foreground" />
+          {isQuiet ? 'Resume' : 'Be Quiet'}
+        </Button>
+      </div>
+
+      {/* Main content area - Now just the transcript */}
       <main className="flex-grow flex flex-col overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-100px)]">
-          {/* Rest of the transcript rendering code stays the same */}
+        <ScrollArea className="h-[calc(100vh-180px)]">
+          <div className="space-y-4 p-4">
+            {transcript.map((entry, index) => {
+              const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
+                entry.type === 'transcript';
+              const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
+                entry.type === 'consolidated';
+
+              if (isTranscriptEntry(entry)) {
+                return (
+                  <div key={index} className="mb-2">
+                    <span className="font-bold text-card-foreground">
+                      SPEAKER {entry.speaker}:
+                    </span>
+                    <span className="text-card-foreground">
+                      {entry.text}
+                    </span>
+                    {entry.isUtteranceEnd && (
+                      <span className="ml-2 text-sm text-yellow-500">
+                        [UTTERANCE END at {entry.lastWordEnd?.toFixed(2)}s]
+                      </span>
+                    )}
+                  </div>
+                );
+              } else if (isConsolidatedMessage(entry)) {
+                return (
+                  <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
+                    <span className="font-bold">
+                      CONSOLIDATED (SPEAKER {entry.speaker}) - 
+                      {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
+                    </span>
+                    <span className="block mt-1">
+                      {entry.text}
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
         </ScrollArea>
       </main>
     </div>
