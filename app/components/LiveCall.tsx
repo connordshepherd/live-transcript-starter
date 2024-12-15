@@ -18,7 +18,15 @@ export type ConsolidatedMessage = {
   trigger: 'utterance_end' | 'speaker_change';
 };
 
-export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+// New: EnhancedMessage type for summarized output
+export type EnhancedMessage = {
+  type: 'enhanced';
+  speaker: number;
+  text: string;
+  originalTexts: string[];
+};
+
+export type DisplayEntry = TranscriptEntry | ConsolidatedMessage | EnhancedMessage;
 
 const SoundwaveAnimation = () => (
   <div className="soundwave">
