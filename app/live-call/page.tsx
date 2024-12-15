@@ -52,11 +52,22 @@ export default function LiveCallPage() {
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Add a handler for the running state
-  const handleRunningStateChange = (isRunning: boolean) => {
+  const handleRunningStateChange = async (isRunning: boolean) => {
     console.log('Running state changed:', isRunning);
     setIsTranscribing(isRunning);
-    if (!isRunning) {
-      // Only handle stopping
+    
+    if (isRunning) {
+      // Reset microphone to Ready state and reconnect
+      await setupMicrophone(); // This should set mic to Ready state
+      connectToDeepgram({
+        model: "nova-2-meeting",
+        interim_results: true,
+        smart_format: true,
+        filler_words: true,
+        utterance_end_ms: 1200,
+        diarize: true,
+      });
+    } else {
       if (keepAliveInterval.current) {
         clearInterval(keepAliveInterval.current);
       }
@@ -102,40 +113,36 @@ export default function LiveCallPage() {
 
   // Connect to Deepgram when microphone is ready
   useEffect(() => {
+    console.log('Microphone state changed:', {
+      microphoneState,
+      isTranscribing,
+      connectionState
+    });
+  
     if (microphoneState === MicrophoneState.Ready && isTranscribing) {
-      console.log('Connecting to Deepgram...');
-      connectToDeepgram({
-        model: "nova-2-meeting",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 1200,
-        diarize: true,
-      });
+      console.log('Starting microphone...');
+      startMicrophone();
     }
-  }, [microphoneState, isTranscribing]);
-
-  // Set up microphone on component mount
-  useEffect(() => {
-    setupMicrophone();
-  }, []);
+  }, [microphoneState, isTranscribing, startMicrophone]);
 
   // Set up event listeners for microphone data and transcription events
   useEffect(() => {
-    console.log('Connection state changed:', connectionState);
-    if (!microphone) {
-      console.log('No microphone');
+    console.log('Setting up event listeners:', {
+      microphone: !!microphone,
+      connection: !!connection,
+      connectionState,
+      isTranscribing
+    });
+  
+    if (!microphone || !connection || !isTranscribing) {
+      console.log('Missing required conditions for event listeners');
       return;
     }
-    if (!connection) {
-      console.log('No connection');
-      return;
-    }
-
+  
     const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX: Prevent empty packets from being sent
-      if (e.data.size > 0) {
-        connection?.send(e.data);
+      if (e.data.size > 0 && connection) {
+        console.log('Sending data to Deepgram');
+        connection.send(e.data);
       }
     };
 
@@ -203,20 +210,19 @@ export default function LiveCallPage() {
 
     // Add event listeners when connection is open
     if (connectionState === LiveConnectionState.OPEN) {
+      console.log('Connection open, adding listeners');
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.addListener('UtteranceEnd', onUtteranceEnd);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      startMicrophone();
     }
-
-    // Clean up event listeners on unmount
+  
     return () => {
+      console.log('Cleaning up listeners');
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.removeListener('UtteranceEnd', onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState]);
+  }, [connectionState, microphone, connection, isTranscribing]);
 
   // Manage keep-alive interval for the Deepgram connection
   useEffect(() => {
