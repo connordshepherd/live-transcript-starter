@@ -40,9 +40,40 @@ export default function LiveCallPage() {
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
-  const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
+  const { connection, connectToDeepgram, connectionState, disconnectFromDeepgram } = useDeepgram();
+  const { 
+    setupMicrophone, 
+    microphone, 
+    startMicrophone, 
+    stopMicrophone,  // Added this
+    microphoneState 
+  } = useMicrophone();
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Add a handler for the running state
+  const handleRunningStateChange = (isRunning: boolean) => {
+    if (isRunning) {
+      // Start everything up
+      if (microphoneState === MicrophoneState.Ready) {
+        connectToDeepgram({
+          model: "nova-2-meeting",
+          interim_results: true,
+          smart_format: true,
+          filler_words: true,
+          utterance_end_ms: 1200,
+          diarize: true,
+        });
+        startMicrophone();
+      }
+    } else {
+      // Stop everything
+      if (keepAliveInterval.current) {
+        clearInterval(keepAliveInterval.current);
+      }
+      stopMicrophone();
+      disconnectFromDeepgram();
+    }
+  };
 
   // Create a consolidated message when an utterance ends or a speaker changes
   const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
@@ -212,14 +243,17 @@ export default function LiveCallPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
-  return <LiveCall transcript={[
-    ...transcript,
-    ...interimTranscript.map(t => ({
-      type: 'transcript' as const,
-      speaker: t.speaker,
-      text: t.text,
-      isUtteranceEnd: t.isUtteranceEnd,
-      lastWordEnd: t.lastWordEnd
-    }))
-  ]} />;
+  return <LiveCall 
+    transcript={[
+      ...transcript,
+      ...interimTranscript.map(t => ({
+        type: 'transcript' as const,
+        speaker: t.speaker,
+        text: t.text,
+        isUtteranceEnd: t.isUtteranceEnd,
+        lastWordEnd: t.lastWordEnd
+      }))
+    ]}
+    onRunningStateChange={handleRunningStateChange}
+  />;
 }
