@@ -56,7 +56,7 @@ export default function LiveCallPage() {
     if (isRunning) {
       console.log('Microphone state:', microphoneState);
       if (microphoneState === MicrophoneState.Ready) {
-        console.log('Connecting to Deepgram...');
+        console.log('Attempting to connect to Deepgram...');
         connectToDeepgram({
           model: "nova-2-meeting",
           interim_results: true,
@@ -64,9 +64,11 @@ export default function LiveCallPage() {
           filler_words: true,
           utterance_end_ms: 1200,
           diarize: true,
+        }).then(() => {
+          console.log('Deepgram connection established');
+        }).catch((error) => {
+          console.error('Failed to connect to Deepgram:', error);
         });
-        console.log('Starting microphone...');
-        startMicrophone();
       }
     } else {
       console.log('Stopping everything...');
@@ -130,8 +132,15 @@ export default function LiveCallPage() {
 
   // Set up event listeners for microphone data and transcription events
   useEffect(() => {
-    if (!microphone) return;
-    if (!connection) return;
+    console.log('Connection state changed:', connectionState);
+    if (!microphone) {
+      console.log('No microphone');
+      return;
+    }
+    if (!connection) {
+      console.log('No connection');
+      return;
+    }
 
     const onData = (e: BlobEvent) => {
       // iOS SAFARI FIX: Prevent empty packets from being sent
@@ -221,29 +230,31 @@ export default function LiveCallPage() {
 
   // Manage keep-alive interval for the Deepgram connection
   useEffect(() => {
+    console.log('Keep-alive effect - Microphone state:', microphoneState, 'Connection state:', connectionState);
     if (!connection) return;
-
+  
     if (
       microphoneState !== MicrophoneState.Open &&
       connectionState === LiveConnectionState.OPEN
     ) {
+      console.log('Setting up keep-alive interval');
       connection.keepAlive();
-
+  
       keepAliveInterval.current = setInterval(() => {
         connection.keepAlive();
       }, 10000);
     } else {
       if (keepAliveInterval.current) {
+        console.log('Clearing keep-alive interval');
         clearInterval(keepAliveInterval.current);
       }
     }
-
+  
     return () => {
       if (keepAliveInterval.current) {
         clearInterval(keepAliveInterval.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
   return <LiveCall 
