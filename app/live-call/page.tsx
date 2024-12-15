@@ -52,9 +52,11 @@ export default function LiveCallPage() {
 
   // Add a handler for the running state
   const handleRunningStateChange = (isRunning: boolean) => {
+    console.log('Running state changed:', isRunning);
     if (isRunning) {
-      // Start everything up
+      console.log('Microphone state:', microphoneState);
       if (microphoneState === MicrophoneState.Ready) {
+        console.log('Connecting to Deepgram...');
         connectToDeepgram({
           model: "nova-2-meeting",
           interim_results: true,
@@ -63,10 +65,11 @@ export default function LiveCallPage() {
           utterance_end_ms: 1200,
           diarize: true,
         });
+        console.log('Starting microphone...');
         startMicrophone();
       }
     } else {
-      // Stop everything
+      console.log('Stopping everything...');
       if (keepAliveInterval.current) {
         clearInterval(keepAliveInterval.current);
       }
