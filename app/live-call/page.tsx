@@ -36,45 +36,13 @@ export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 //import { DisplayEntry } from "../types/displayEntry";
 
 export default function LiveCallPage() {
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
-  const { connection, connectToDeepgram, connectionState, disconnectFromDeepgram } = useDeepgram();
-  const { 
-    setupMicrophone, 
-    microphone, 
-    startMicrophone, 
-    stopMicrophone,  // Added this
-    microphoneState 
-  } = useMicrophone();
+  const { connection, connectToDeepgram, connectionState } = useDeepgram();
+  const { setupMicrophone, microphone, startMicrophone, microphoneState } = useMicrophone();
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
-
-  // Add a handler for the running state
-  const handleRunningStateChange = async (isRunning: boolean) => {
-    console.log('Running state changed:', isRunning);
-    setIsTranscribing(isRunning);
-    
-    if (isRunning) {
-      // Reset microphone to Ready state and reconnect
-      await setupMicrophone(); // This should set mic to Ready state
-      connectToDeepgram({
-        model: "nova-2-meeting",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 1200,
-        diarize: true,
-      });
-    } else {
-      if (keepAliveInterval.current) {
-        clearInterval(keepAliveInterval.current);
-      }
-      stopMicrophone();
-      disconnectFromDeepgram();
-    }
-  };
 
   // Create a consolidated message when an utterance ends or a speaker changes
   const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
@@ -113,36 +81,28 @@ export default function LiveCallPage() {
 
   // Connect to Deepgram when microphone is ready
   useEffect(() => {
-    console.log('Microphone state changed:', {
-      microphoneState,
-      isTranscribing,
-      connectionState
-    });
-  
-    if (microphoneState === MicrophoneState.Ready && isTranscribing) {
-      console.log('Starting microphone...');
-      startMicrophone();
+    if (microphoneState === MicrophoneState.Ready) {
+      connectToDeepgram({
+        model: "nova-2-meeting",
+        interim_results: true,
+        smart_format: true,
+        filler_words: true,
+        utterance_end_ms: 1200,
+        diarize: true,
+      });
     }
-  }, [microphoneState, isTranscribing, startMicrophone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphoneState]);
 
   // Set up event listeners for microphone data and transcription events
   useEffect(() => {
-    console.log('Setting up event listeners:', {
-      microphone: !!microphone,
-      connection: !!connection,
-      connectionState,
-      isTranscribing
-    });
-  
-    if (!microphone || !connection || !isTranscribing) {
-      console.log('Missing required conditions for event listeners');
-      return;
-    }
-  
+    if (!microphone) return;
+    if (!connection) return;
+
     const onData = (e: BlobEvent) => {
-      if (e.data.size > 0 && connection) {
-        console.log('Sending data to Deepgram');
-        connection.send(e.data);
+      // iOS SAFARI FIX: Prevent empty packets from being sent
+      if (e.data.size > 0) {
+        connection?.send(e.data);
       }
     };
 
@@ -210,60 +170,56 @@ export default function LiveCallPage() {
 
     // Add event listeners when connection is open
     if (connectionState === LiveConnectionState.OPEN) {
-      console.log('Connection open, adding listeners');
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.addListener('UtteranceEnd', onUtteranceEnd);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+      startMicrophone();
     }
-  
+
+    // Clean up event listeners on unmount
     return () => {
-      console.log('Cleaning up listeners');
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       connection.removeListener('UtteranceEnd', onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
-  }, [connectionState, microphone, connection, isTranscribing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionState]);
 
   // Manage keep-alive interval for the Deepgram connection
   useEffect(() => {
-    console.log('Keep-alive effect - Microphone state:', microphoneState, 'Connection state:', connectionState);
     if (!connection) return;
-  
+
     if (
       microphoneState !== MicrophoneState.Open &&
       connectionState === LiveConnectionState.OPEN
     ) {
-      console.log('Setting up keep-alive interval');
       connection.keepAlive();
-  
+
       keepAliveInterval.current = setInterval(() => {
         connection.keepAlive();
       }, 10000);
     } else {
       if (keepAliveInterval.current) {
-        console.log('Clearing keep-alive interval');
         clearInterval(keepAliveInterval.current);
       }
     }
-  
+
     return () => {
       if (keepAliveInterval.current) {
         clearInterval(keepAliveInterval.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
-  return <LiveCall 
-    transcript={[
-      ...transcript,
-      ...interimTranscript.map(t => ({
-        type: 'transcript' as const,
-        speaker: t.speaker,
-        text: t.text,
-        isUtteranceEnd: t.isUtteranceEnd,
-        lastWordEnd: t.lastWordEnd
-      }))
-    ]}
-    onRunningStateChange={handleRunningStateChange}
-  />;
+  return <LiveCall transcript={[
+    ...transcript,
+    ...interimTranscript.map(t => ({
+      type: 'transcript' as const,
+      speaker: t.speaker,
+      text: t.text,
+      isUtteranceEnd: t.isUtteranceEnd,
+      lastWordEnd: t.lastWordEnd
+    }))
+  ]} />;
 }
