@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
+import { Phone, PhoneOff } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 type TranscriptEntry = {
@@ -60,6 +60,15 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
     };
   }, []);
 
+  const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
+    entry.type === 'transcript';
+  
+  const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
+    entry.type === 'consolidated';
+
+  const isEnhancedMessage = (entry: DisplayEntry): entry is EnhancedMessage =>
+    entry.type === 'enhanced';
+
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 bg-background">
       <header className="flex justify-between items-center mb-4">
@@ -72,7 +81,6 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
           <span className="text-foreground">{isAudioOn ? 'Listening' : 'Idle'}</span>
         </div>
         
-        {/* Replace the mic button and associated text with Start/Pause Recording button */}
         <div className="flex items-center space-x-2">
           <Button
             variant={isAudioOn ? "destructive" : "default"}
@@ -93,24 +101,16 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
         </div>
       </header>
 
-      {/* Removed the "Be Quiet" button row. */}
-
       <main className="flex-grow flex flex-col overflow-hidden">
         <ScrollArea className="h-[calc(100vh-100px)]"> 
-          {/* Adjusted height since we removed one row of buttons */}
           <div className="space-y-4 p-4">
             {transcript.map((entry, index) => {
-              const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
-                entry.type === 'transcript';
-              const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
-                entry.type === 'consolidated';
-
               if (isTranscriptEntry(entry)) {
                 return (
                   <div key={index} className="mb-2">
                     <span className="font-bold text-card-foreground">
                       SPEAKER {entry.speaker}:
-                    </span>
+                    </span>{' '}
                     <span className="text-card-foreground">
                       {entry.text}
                     </span>
@@ -126,11 +126,30 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
                   <div key={index} className="mb-2 p-2 bg-blue-100 dark:bg-blue-900 rounded">
                     <span className="font-bold">
                       CONSOLIDATED (SPEAKER {entry.speaker}) - 
-                      {entry.trigger === 'utterance_end' ? 'Utterance End' : 'Speaker Change'}:
+                      {entry.trigger === 'utterance_end' ? ' Utterance End' : ' Speaker Change'}:
                     </span>
                     <span className="block mt-1">
                       {entry.text}
                     </span>
+                  </div>
+                );
+              } else if (isEnhancedMessage(entry)) {
+                return (
+                  <div key={index} className="mb-2 p-2 bg-green-100 dark:bg-green-900 rounded">
+                    <span className="font-bold">
+                      ENHANCED SUMMARY (SPEAKER {entry.speaker}):
+                    </span>
+                    <span className="block mt-1">
+                      {entry.text}
+                    </span>
+                    <details className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                      <summary>Original Texts</summary>
+                      <ul className="list-disc list-inside">
+                        {entry.originalTexts.map((original, i) => (
+                          <li key={i}>{original}</li>
+                        ))}
+                      </ul>
+                    </details>
                   </div>
                 );
               }
