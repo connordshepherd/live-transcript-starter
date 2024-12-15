@@ -36,6 +36,7 @@ export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 //import { DisplayEntry } from "../types/displayEntry";
 
 export default function LiveCallPage() {
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
@@ -53,25 +54,9 @@ export default function LiveCallPage() {
   // Add a handler for the running state
   const handleRunningStateChange = (isRunning: boolean) => {
     console.log('Running state changed:', isRunning);
-    if (isRunning) {
-      console.log('Microphone state:', microphoneState);
-      if (microphoneState === MicrophoneState.Ready) {
-        console.log('Attempting to connect to Deepgram...');
-        connectToDeepgram({
-          model: "nova-2-meeting",
-          interim_results: true,
-          smart_format: true,
-          filler_words: true,
-          utterance_end_ms: 1200,
-          diarize: true,
-        }).then(() => {
-          console.log('Deepgram connection established');
-        }).catch((error) => {
-          console.error('Failed to connect to Deepgram:', error);
-        });
-      }
-    } else {
-      console.log('Stopping everything...');
+    setIsTranscribing(isRunning);
+    if (!isRunning) {
+      // Only handle stopping
       if (keepAliveInterval.current) {
         clearInterval(keepAliveInterval.current);
       }
@@ -117,7 +102,8 @@ export default function LiveCallPage() {
 
   // Connect to Deepgram when microphone is ready
   useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready) {
+    if (microphoneState === MicrophoneState.Ready && isTranscribing) {
+      console.log('Connecting to Deepgram...');
       connectToDeepgram({
         model: "nova-2-meeting",
         interim_results: true,
@@ -127,8 +113,12 @@ export default function LiveCallPage() {
         diarize: true,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState]);
+  }, [microphoneState, isTranscribing]);
+
+  // Set up microphone on component mount
+  useEffect(() => {
+    setupMicrophone();
+  }, []);
 
   // Set up event listeners for microphone data and transcription events
   useEffect(() => {
