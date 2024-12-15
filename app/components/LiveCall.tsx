@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-// Keep the types
 type TranscriptEntry = {
   type: 'transcript';
   speaker: number;
@@ -21,7 +20,6 @@ export type ConsolidatedMessage = {
 
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
-// Keep the soundwave animation component
 const SoundwaveAnimation = () => (
   <div className="soundwave">
     <div className="bar"></div>
@@ -30,26 +28,22 @@ const SoundwaveAnimation = () => (
   </div>
 );
 
-// Keep the props interface
 interface LiveCallProps {
   transcript: DisplayEntry[];
+  isAudioOn: boolean; 
+  onToggleAudio: () => void; 
 }
 
-// Main LiveCall component
-export default function LiveCall({ transcript }: LiveCallProps) {
-  // Keep only the necessary state
-  const [isListening, setIsListening] = useState(false)
-  const [isAudioOn, setIsAudioOn] = useState(true)
-  const [isCallActive, setIsCallActive] = useState(false)
-  const [isQuiet, setIsQuiet] = useState(false)
+export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveCallProps) {
+  const [isListening, setIsListening] = useState(false);
 
-  // Keep only the necessary functions
+  // Renamed "call" concept to "recording" for clarity
   const toggleListening = () => {
-    setIsListening(prevState => !prevState)
+    onToggleAudio();
+    setIsListening(prev => !prev);
   }
 
-  // Keep the styles effect
-  React.useEffect(() => {
+  useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.textContent = styles;
     document.head.appendChild(styleElement);
@@ -57,62 +51,45 @@ export default function LiveCall({ transcript }: LiveCallProps) {
       document.head.removeChild(styleElement);
     };
   }, []);
+
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 bg-background">
-      {/* Header - Keep the listening status */}
       <header className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
-          {isListening ? (
+          {isAudioOn ? (
             <SoundwaveAnimation />
           ) : (
             <div className="w-3 h-3 rounded-full bg-secondary" />
           )}
-          <span className="text-foreground">{isListening ? 'Listening' : 'Idle'}</span>
+          <span className="text-foreground">{isAudioOn ? 'Listening' : 'Idle'}</span>
         </div>
+        
+        {/* Replace the mic button and associated text with Start/Pause Recording button */}
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="border-input hover:bg-accent hover:text-accent-foreground"
+          <Button
+            variant={isAudioOn ? "destructive" : "default"}
             onClick={toggleListening}
           >
-            {isAudioOn ? <Mic className="h-4 w-4 text-foreground" /> : <MicOff className="h-4 w-4 text-foreground" />}
+            {isAudioOn ? (
+              <>
+                <PhoneOff className="h-4 w-4 mr-2" />
+                Pause Recording
+              </>
+            ) : (
+              <>
+                <Phone className="h-4 w-4 mr-2" />
+                Start Recording
+              </>
+            )}
           </Button>
-          <span className="text-foreground">{isAudioOn ? 'Audio On' : 'Audio Off'}</span>
         </div>
       </header>
 
-      {/* Call control buttons */}
-      <div className="flex justify-between mb-4">
-        <Button
-          variant={isCallActive ? "destructive" : "default"}
-          onClick={() => setIsCallActive(!isCallActive)}
-        >
-          {isCallActive ? (
-            <>
-              <PhoneOff className="h-4 w-4 mr-2" />
-              End Call
-            </>
-          ) : (
-            <>
-              <Phone className="h-4 w-4 mr-2" />
-              Start Call
-            </>
-          )}
-        </Button>
-        <Button
-          variant={isQuiet ? "secondary" : "outline"}
-          onClick={() => setIsQuiet(!isQuiet)}
-          className="text-foreground"
-        >
-          <Moon className="h-4 w-4 mr-2 text-foreground" />
-          {isQuiet ? 'Resume' : 'Be Quiet'}
-        </Button>
-      </div>
+      {/* Removed the "Be Quiet" button row. */}
 
-      {/* Main content area - Now just the transcript */}
       <main className="flex-grow flex flex-col overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-180px)]">
+        <ScrollArea className="h-[calc(100vh-100px)]"> 
+          {/* Adjusted height since we removed one row of buttons */}
           <div className="space-y-4 p-4">
             {transcript.map((entry, index) => {
               const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
@@ -158,7 +135,6 @@ export default function LiveCall({ transcript }: LiveCallProps) {
   )
 }
 
-// Keep the styles for the soundwave animation
 const styles = `
   .soundwave {
     display: flex;
