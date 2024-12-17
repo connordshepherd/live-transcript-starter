@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import LiveCall from "../components/LiveCall";
+import { useEffect, useState, useRef } from "react";
 import {
   LiveConnectionState,
   LiveTranscriptionEvent,
@@ -13,6 +12,11 @@ import {
   MicrophoneState,
   useMicrophone,
 } from "../context/MicrophoneContextProvider";
+
+import LiveTranscriptBar from "../components/LiveTranscriptBar";
+import TranscriptView from "../components/TranscriptView";
+import MainContentArea from "../components/MainContentArea";
+import InputSection from "../components/InputSection";
 
 type TranscriptEntry = {
   type: 'transcript';
@@ -32,56 +36,151 @@ export type ConsolidatedMessage = {
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 export default function LiveCallPage() {
+  // State for the full transcript
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
+  // Interim transcripts for partial utterances
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
+  // Current speaker text buffer
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
+  // Current speaker number
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
-
-  // New state to control audio on/off
+  // Controls audio on/off (recording state)
   const [isAudioOn, setIsAudioOn] = useState(false);
+  // Controls whether full transcript is expanded
+  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
 
   const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
+
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Create a consolidated message when an utterance ends or a speaker changes
-  const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
-    console.log("Attempting to create consolidated message", {
-      currentCollectedText,
-      trigger,
-      speaker: currentSpeaker
-    });
-    
-    if (currentCollectedText.length > 0) {
-      const consolidatedEntry = {
-        type: 'consolidated' as const,
-        speaker: currentSpeaker,
-        text: currentCollectedText.join(' '),
-        trigger
-      };
-      console.log("Created consolidated entry:", consolidatedEntry);
-      
-      setTranscript(prev => {
-        console.log("Previous transcript:", prev);
-        const newTranscript = [...prev, consolidatedEntry];
-        console.log("New transcript:", newTranscript);
-        return newTranscript;
+  // Add new state for chat messages
+  const [messages, setMessages] = useState<Array<{
+    id: number;
+    type: 'summary' | 'user' | 'ai';
+    title?: string;
+    content: string;
+    timestamp: string;
+    quotedMessage?: string;
+  }>>([]);
+
+  // Combine final and interim transcripts for display
+  const combinedTranscript: DisplayEntry[] = [
+    ...transcript,
+    ...interimTranscript.map(t => ({
+      type: 'transcript' as const,
+      speaker: t.speaker,
+      text: t.text,
+      isUtteranceEnd: t.isUtteranceEnd,
+      lastWordEnd: t.lastWordEnd
+    }))
+  ];
+
+  const fetchAIResponse = async (userMessage: string, transcript: string) => {
+    try {
+      const response = await fetch('/api/answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          transcript: transcript
+        }),
       });
-      setCurrentCollectedText([]);
-    } else {
-      console.log("No text to consolidate");
+      
+      const data = await response.json();
+      return data.answer;
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      return "Sorry, I couldn't process your request at this time.";
+    }
+  };
+  
+  // Update the handleSendMessage function
+  const handleSendMessage = async (message: string) => {
+    // First add the user message
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    }]);
+  
+    // Get the full transcript text
+    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
+  
+    // Then fetch and add AI response
+    const aiResponse = await fetchAIResponse(message, fullTranscript);
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'ai',
+      content: aiResponse,
+      timestamp: new Date().toISOString(),
+      quotedMessage: message
+    }]);
+  };
+
+  // Add a function to generate summary
+  const generateSummary = async () => {
+    // Only generate if we have transcript content
+    if (combinedTranscript.length === 0) return;
+
+    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
+
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript: fullTranscript }),
+      });
+
+      const data = await response.json();
+      
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        type: 'summary',
+        title: 'Summary',
+        content: data.summary,
+        timestamp: new Date().toISOString()
+      }]);
+    } catch (error) {
+      console.error('Error generating summary:', error);
     }
   };
 
-  // Effect to handle starting/stopping microphone & connection based on isAudioOn
+  // Add useEffect for periodic summarization
+  useEffect(() => {
+    // Only run summarization if audio is on and we have transcript content
+    if (!isAudioOn || combinedTranscript.length === 0) return;
+
+    // Function to check if we should generate summary
+    const checkAndGenerateSummary = () => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      if (seconds === 0 || seconds === 30) {
+        generateSummary();
+      }
+    };
+
+    // Check immediately in case we're starting near a 30-second mark
+    checkAndGenerateSummary();
+
+    // Set up interval to check every second
+    const intervalId = setInterval(checkAndGenerateSummary, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isAudioOn, combinedTranscript]);
+
+  // Manage microphone and Deepgram connection when isAudioOn changes
   useEffect(() => {
     if (isAudioOn) {
-      // If microphone is not setup yet, set it up
       if (microphoneState === MicrophoneState.NotSetup) {
         setupMicrophone();
       }
 
-      // If microphone is ready and Deepgram connection not open, connect now
       if (microphoneState === MicrophoneState.Ready && connectionState !== LiveConnectionState.OPEN) {
         connectToDeepgram({
           model: "nova-2-meeting",
@@ -93,12 +192,10 @@ export default function LiveCallPage() {
         });
       }
 
-      // If both microphone ready and connection open, start the microphone
       if (microphoneState === MicrophoneState.Ready && connectionState === LiveConnectionState.OPEN) {
         startMicrophone();
       }
     } else {
-      // If turning off, stop microphone & disconnect from Deepgram if needed
       if (microphoneState === MicrophoneState.Open) {
         stopMicrophone();
       }
@@ -109,33 +206,28 @@ export default function LiveCallPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAudioOn, microphoneState, connectionState]);
 
-  // Event listeners for transcription when isAudioOn is true
+  // Set up transcription event listeners
   useEffect(() => {
-    if (!microphone) return;
-    if (!connection) return;
+    if (!microphone || !connection) return;
 
     const handleConsolidation = (trigger: 'utterance_end' | 'speaker_change', newSpeaker?: number) => {
-      setCurrentCollectedText(currentText => {
-        if (currentText.length > 0) {
-          const consolidatedEntry = {
-            type: 'consolidated' as const,
-            speaker: currentSpeaker,
-            text: currentText.join(' '),
-            trigger
-          };
-    
-          setTranscript(prev => [...prev, consolidatedEntry]);
-        }
-        return []; // Clear buffer
-      });
-    
+      if (currentCollectedText.length > 0) {
+        const consolidatedEntry = {
+          type: 'consolidated' as const,
+          speaker: currentSpeaker,
+          text: currentCollectedText.join(' '),
+          trigger
+        };
+        setTranscript(prev => [...prev, consolidatedEntry]);
+        setCurrentCollectedText([]);
+      }
+
       if (newSpeaker !== undefined) {
         setCurrentSpeaker(newSpeaker);
       }
     };
 
     const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX: Prevent empty packets from being sent
       if (e.data.size > 0) {
         connection?.send(e.data);
       }
@@ -144,20 +236,17 @@ export default function LiveCallPage() {
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
-        const newEntry = {
-          type: 'transcript' as const,
+        const newEntry: TranscriptEntry = {
+          type: 'transcript',
           speaker: words[0].speaker || 0,
           text: words.map(word => word.word).join(' '),
           isUtteranceEnd: false
         };
-    
+
         if (data.is_final) {
-          // Check for speaker change first
           if (newEntry.speaker !== currentSpeaker) {
             handleConsolidation('speaker_change', newEntry.speaker);
           }
-    
-          // Add new text to collection buffer
           setCurrentCollectedText(prev => [...prev, newEntry.text]);
           setTranscript(prev => [...prev, newEntry]);
           setInterimTranscript([]);
@@ -166,7 +255,7 @@ export default function LiveCallPage() {
         }
       }
     };
-    
+
     const onUtteranceEnd = (data: any) => {
       setTranscript(prev => {
         const lastEntry = prev[prev.length - 1];
@@ -179,7 +268,6 @@ export default function LiveCallPage() {
         }
         return prev;
       });
-    
       handleConsolidation('utterance_end');
     };
 
@@ -194,19 +282,14 @@ export default function LiveCallPage() {
       connection.removeListener('UtteranceEnd', onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAudioOn, connectionState, microphone]);
+  }, [isAudioOn, connectionState, microphone, connection, currentSpeaker, currentCollectedText]);
 
-  // Manage keep-alive interval for the Deepgram connection
+  // Keep-alive management
   useEffect(() => {
     if (!connection) return;
 
-    if (
-      microphoneState !== MicrophoneState.Open &&
-      connectionState === LiveConnectionState.OPEN
-    ) {
+    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
       connection.keepAlive();
-
       keepAliveInterval.current = setInterval(() => {
         connection.keepAlive();
       }, 10000);
@@ -221,21 +304,36 @@ export default function LiveCallPage() {
         clearInterval(keepAliveInterval.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState, connectionState]);
+  }, [microphoneState, connectionState, connection]);
 
-  return <LiveCall
-    transcript={[
-      ...transcript,
-      ...interimTranscript.map(t => ({
-        type: 'transcript' as const,
-        speaker: t.speaker,
-        text: t.text,
-        isUtteranceEnd: t.isUtteranceEnd,
-        lastWordEnd: t.lastWordEnd
-      }))
-    ]}
-    isAudioOn={isAudioOn}
-    onToggleAudio={() => setIsAudioOn(!isAudioOn)}
-  />;
+  // For the LiveTranscriptBar, we'll show the last line of the transcript as a snippet
+  const lastLine = combinedTranscript.length > 0 ? combinedTranscript[combinedTranscript.length - 1].text : "No transcript yet...";
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-100">
+      <LiveTranscriptBar
+        transcript={lastLine}
+        isRecording={isAudioOn}
+        onToggleRecording={() => setIsAudioOn(!isAudioOn)}
+        isExpanded={isTranscriptExpanded}
+        onToggleExpand={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
+      />
+
+      {isTranscriptExpanded && (
+        <TranscriptView
+          onClose={() => setIsTranscriptExpanded(false)}
+          transcript={combinedTranscript
+            .filter(entry => entry.type === 'transcript')
+            .map(entry => ({
+              speaker: (entry as TranscriptEntry).speaker,
+              text: (entry as TranscriptEntry).text
+            }))
+          }
+        />
+      )}
+
+      <MainContentArea messages={messages} />
+      <InputSection onSendMessage={handleSendMessage} />
+    </div>
+  );
 }

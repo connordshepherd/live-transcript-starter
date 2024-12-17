@@ -1,6 +1,11 @@
+// This component represents a live call transcription interface. It displays a list of transcript entries
+// and consolidated messages, and provides controls for starting and stopping audio recording.
+// The component handles UI elements such as a soundwave animation and dynamically updates the displayed transcript
+// as audio is transcribed in real-time.
+
 import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Mic, MicOff, Phone, PhoneOff, Moon } from 'lucide-react'
+import { Phone, PhoneOff } from 'lucide-react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 type TranscriptEntry = {
@@ -21,6 +26,7 @@ export type ConsolidatedMessage = {
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 const SoundwaveAnimation = () => (
+  // This component shows a simple soundwave animation when audio is on
   <div className="soundwave">
     <div className="bar"></div>
     <div className="bar"></div>
@@ -35,14 +41,17 @@ interface LiveCallProps {
 }
 
 export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveCallProps) {
+  // State that tracks whether we are currently listening (recording) or not
   const [isListening, setIsListening] = useState(false);
 
-  // Renamed "call" concept to "recording" for clarity
+  // Function to toggle listening state and call the provided onToggleAudio callback
   const toggleListening = () => {
     onToggleAudio();
     setIsListening(prev => !prev);
   }
 
+  // Effect that injects custom CSS styles into the document head when this component mounts
+  // and removes them on unmount.
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.textContent = styles;
@@ -56,6 +65,7 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 bg-background">
       <header className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
+          {/* Conditional rendering of the soundwave when audio is on, otherwise show a static indicator */}
           {isAudioOn ? (
             <SoundwaveAnimation />
           ) : (
@@ -64,7 +74,7 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
           <span className="text-foreground">{isAudioOn ? 'Listening' : 'Idle'}</span>
         </div>
         
-        {/* Replace the mic button and associated text with Start/Pause Recording button */}
+        {/* Button to start or pause the recording */}
         <div className="flex items-center space-x-2">
           <Button
             variant={isAudioOn ? "destructive" : "default"}
@@ -85,13 +95,13 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
         </div>
       </header>
 
-      {/* Removed the "Be Quiet" button row. */}
-
       <main className="flex-grow flex flex-col overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-100px)]"> 
-          {/* Adjusted height since we removed one row of buttons */}
+        {/* ScrollArea to show transcript entries */}
+        <ScrollArea className="h-[calc(100vh-100px)]">
           <div className="space-y-4 p-4">
+            {/* Render each entry in the transcript array */}
             {transcript.map((entry, index) => {
+              // Type guards to differentiate between transcript entries and consolidated messages
               const isTranscriptEntry = (entry: DisplayEntry): entry is TranscriptEntry => 
                 entry.type === 'transcript';
               const isConsolidatedMessage = (entry: DisplayEntry): entry is ConsolidatedMessage => 
@@ -135,6 +145,7 @@ export default function LiveCall({ transcript, isAudioOn, onToggleAudio }: LiveC
   )
 }
 
+// Custom inline styles for the soundwave animation
 const styles = `
   .soundwave {
     display: flex;
