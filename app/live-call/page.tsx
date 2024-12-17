@@ -64,27 +64,28 @@ export default function LiveCallPage() {
     quotedMessage?: string;
   }>>([]);
 
-  const fetchAIResponse = async (userMessage: string, transcript: DisplayEntry[]) => {
+  const fetchAIResponse = async (userMessage: string, transcript: string) => {
     try {
-      const response = await fetch('/api/summarize', {
+      const response = await fetch('/api/answer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          transcript: userMessage // You might want to send more context from transcript here
+          message: userMessage,
+          transcript: transcript
         }),
       });
       
       const data = await response.json();
-      return data.summary;
+      return data.answer;
     } catch (error) {
       console.error('Error fetching AI response:', error);
       return "Sorry, I couldn't process your request at this time.";
     }
   };
-
-  // Add handler for new messages
+  
+  // Update the handleSendMessage function
   const handleSendMessage = async (message: string) => {
     // First add the user message
     setMessages(prev => [...prev, {
@@ -94,14 +95,17 @@ export default function LiveCallPage() {
       timestamp: new Date().toISOString()
     }]);
   
+    // Get the full transcript text
+    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
+  
     // Then fetch and add AI response
-    const aiResponse = await fetchAIResponse(message, combinedTranscript);
+    const aiResponse = await fetchAIResponse(message, fullTranscript);
     setMessages(prev => [...prev, {
       id: Date.now(),
       type: 'ai',
       content: aiResponse,
       timestamp: new Date().toISOString(),
-      quotedMessage: message // Include the original message
+      quotedMessage: message
     }]);
   };
 
