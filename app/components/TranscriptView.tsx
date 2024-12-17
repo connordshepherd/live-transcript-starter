@@ -2,19 +2,21 @@
 
 import { X } from 'lucide-react'
 
-type TranscriptViewEntry = {
+type FinalTranscriptEntry = {
   speaker: number
   text: string
 }
 
 type TranscriptViewProps = {
   onClose: () => void
-  transcript: TranscriptViewEntry[]
+  // The parent should pass ONLY final transcript entries or a filtered list
+  transcript: FinalTranscriptEntry[]
 }
 
 /**
- * Displays a full transcript in a modal-like overlay.
- * The transcript prop should be an array of { speaker: number, text: string } entries.
+ * A simplified TranscriptView that only shows final transcript entries.
+ * We assume `transcript` is already filtered in the parent so that it contains
+ * only final transcript entries of type 'transcript'.
  */
 export default function TranscriptView({ onClose, transcript }: TranscriptViewProps) {
   return (
@@ -30,12 +32,16 @@ export default function TranscriptView({ onClose, transcript }: TranscriptViewPr
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
-          {transcript.map((entry, index) => (
-            <div key={index} className="border-b pb-2">
-              <span className="font-semibold">Speaker {entry.speaker}:</span>{' '}
-              <span>{entry.text}</span>
-            </div>
-          ))}
+          {transcript.length === 0 ? (
+            <p>No final transcripts available yet.</p>
+          ) : (
+            transcript.map((entry, index) => (
+              <div key={index} className="border-b pb-2">
+                <span className="font-semibold">Speaker {entry.speaker}:</span>{' '}
+                <span>{entry.text}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
