@@ -64,6 +64,18 @@ export default function LiveCallPage() {
     quotedMessage?: string;
   }>>([]);
 
+  // Combine final and interim transcripts for display
+  const combinedTranscript: DisplayEntry[] = [
+    ...transcript,
+    ...interimTranscript.map(t => ({
+      type: 'transcript' as const,
+      speaker: t.speaker,
+      text: t.text,
+      isUtteranceEnd: t.isUtteranceEnd,
+      lastWordEnd: t.lastWordEnd
+    }))
+  ];
+
   const fetchAIResponse = async (userMessage: string, transcript: string) => {
     try {
       const response = await fetch('/api/answer', {
@@ -108,6 +120,59 @@ export default function LiveCallPage() {
       quotedMessage: message
     }]);
   };
+
+  // Add a function to generate summary
+  const generateSummary = async () => {
+    // Only generate if we have transcript content
+    if (combinedTranscript.length === 0) return;
+
+    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
+
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript: fullTranscript }),
+      });
+
+      const data = await response.json();
+      
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        type: 'summary',
+        title: 'Summary',
+        content: data.summary,
+        timestamp: new Date().toISOString()
+      }]);
+    } catch (error) {
+      console.error('Error generating summary:', error);
+    }
+  };
+
+  // Add useEffect for periodic summarization
+  useEffect(() => {
+    // Only run summarization if audio is on and we have transcript content
+    if (!isAudioOn || combinedTranscript.length === 0) return;
+
+    // Function to check if we should generate summary
+    const checkAndGenerateSummary = () => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      if (seconds === 0 || seconds === 30) {
+        generateSummary();
+      }
+    };
+
+    // Check immediately in case we're starting near a 30-second mark
+    checkAndGenerateSummary();
+
+    // Set up interval to check every second
+    const intervalId = setInterval(checkAndGenerateSummary, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isAudioOn, combinedTranscript]);
 
   // Manage microphone and Deepgram connection when isAudioOn changes
   useEffect(() => {
@@ -240,18 +305,6 @@ export default function LiveCallPage() {
       }
     };
   }, [microphoneState, connectionState, connection]);
-
-  // Combine final and interim transcripts for display
-  const combinedTranscript: DisplayEntry[] = [
-    ...transcript,
-    ...interimTranscript.map(t => ({
-      type: 'transcript' as const,
-      speaker: t.speaker,
-      text: t.text,
-      isUtteranceEnd: t.isUtteranceEnd,
-      lastWordEnd: t.lastWordEnd
-    }))
-  ];
 
   // For the LiveTranscriptBar, we'll show the last line of the transcript as a snippet
   const lastLine = combinedTranscript.length > 0 ? combinedTranscript[combinedTranscript.length - 1].text : "No transcript yet...";
