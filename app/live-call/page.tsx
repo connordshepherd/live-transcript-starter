@@ -64,13 +64,44 @@ export default function LiveCallPage() {
     quotedMessage?: string;
   }>>([]);
 
+  const fetchAIResponse = async (userMessage: string, transcript: DisplayEntry[]) => {
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcript: userMessage // You might want to send more context from transcript here
+        }),
+      });
+      
+      const data = await response.json();
+      return data.summary;
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      return "Sorry, I couldn't process your request at this time.";
+    }
+  };
+
   // Add handler for new messages
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = async (message: string) => {
+    // First add the user message
     setMessages(prev => [...prev, {
       id: Date.now(),
       type: 'user',
       content: message,
       timestamp: new Date().toISOString()
+    }]);
+  
+    // Then fetch and add AI response
+    const aiResponse = await fetchAIResponse(message, combinedTranscript);
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'ai',
+      content: aiResponse,
+      timestamp: new Date().toISOString(),
+      quotedMessage: message // Include the original message
     }]);
   };
 

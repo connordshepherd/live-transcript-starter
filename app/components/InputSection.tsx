@@ -36,11 +36,11 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
         {suggestions.map((suggestion, index) => (
           <button
             key={index}
-            className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm whitespace-nowrap"
+            className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm whitespace-nowrap"
             onClick={() => onSendMessage(suggestion)}
-          >
+            >
             {suggestion}
-          </button>
+            </button>
         ))}
       </div>
       <form onSubmit={handleSubmit} className="flex items-center">
@@ -49,11 +49,11 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
         />
         <button
           type="submit"
-          className="bg-blue-500 text-white rounded-r-lg px-4 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-blue-500 text-white rounded-r-lg px-4 h-[42px] hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <Send className="w-5 h-5" />
         </button>
