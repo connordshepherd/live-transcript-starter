@@ -15,6 +15,8 @@ import {
 
 import LiveTranscriptBar from "../components/LiveTranscriptBar";
 import TranscriptView from "../components/TranscriptView";
+import MainContentArea from "../components/MainContentArea";
+import InputSection from "../components/InputSection";
 
 type TranscriptEntry = {
   type: 'transcript';
@@ -52,18 +54,24 @@ export default function LiveCallPage() {
 
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper to create a consolidated message
-  const createConsolidatedMessage = (trigger: 'utterance_end' | 'speaker_change') => {
-    if (currentCollectedText.length > 0) {
-      const consolidatedEntry = {
-        type: 'consolidated' as const,
-        speaker: currentSpeaker,
-        text: currentCollectedText.join(' '),
-        trigger
-      };
-      setTranscript(prev => [...prev, consolidatedEntry]);
-      setCurrentCollectedText([]);
-    }
+  // Add new state for chat messages
+  const [messages, setMessages] = useState<Array<{
+    id: number;
+    type: 'summary' | 'user' | 'ai';
+    title?: string;
+    content: string;
+    timestamp: string;
+    quotedMessage?: string;
+  }>>([]);
+
+  // Add handler for new messages
+  const handleSendMessage = (message: string) => {
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    }]);
   };
 
   // Manage microphone and Deepgram connection when isAudioOn changes
@@ -236,7 +244,8 @@ export default function LiveCallPage() {
         />
       )}
 
-      {/* You can integrate other parts of your UI (like InputSection, MainContentArea) here */}
+      <MainContentArea messages={messages} />
+      <InputSection onSendMessage={handleSendMessage} />
     </div>
   );
 }
