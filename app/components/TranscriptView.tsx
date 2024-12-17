@@ -30,7 +30,7 @@ export default function TranscriptView({ onClose, transcript }: TranscriptViewPr
           <X className="w-6 h-6" />
         </button>
       </div>
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 text-gray-800">
         <div className="space-y-4">
           {transcript.length === 0 ? (
             <p>No final transcripts available yet.</p>
