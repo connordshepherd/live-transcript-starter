@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 /**
  * This component renders the input section at the bottom of the application.
@@ -45,6 +45,7 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
             </button>
           ))}
         </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
 
       <form onSubmit={handleSubmit} className="flex items-center">
