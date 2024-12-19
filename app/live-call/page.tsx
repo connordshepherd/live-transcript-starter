@@ -17,7 +17,6 @@ import LiveTranscriptBar from "../components/LiveTranscriptBar";
 import TranscriptView from "../components/TranscriptView";
 import MainContentArea from "../components/MainContentArea";
 import InputSection from "../components/InputSection";
-import InitialState from "../components/InitialState";
 
 type TranscriptEntry = {
   type: "transcript";
@@ -28,19 +27,16 @@ type TranscriptEntry = {
 type DisplayEntry = TranscriptEntry; // Only transcript entries remain
 
 export default function LiveCallPage() {
-  const [isMeetingStarted, setIsMeetingStarted] = useState(false);
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
   const [isAudioOn, setIsAudioOn] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
+
   const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
-  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const handleStartMeeting = () => {
-    setIsMeetingStarted(true);
-  };
+  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [messages, setMessages] = useState<Array<{
     id: number;
@@ -196,7 +192,7 @@ export default function LiveCallPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAudioOn, microphoneState, connectionState, connection, startMicrophone, stopMicrophone, disconnectFromDeepgram, setupMicrophone]);
+  }, [isAudioOn, microphoneState, connectionState]);
 
   // Set up transcription event listeners
   useEffect(() => {
@@ -270,12 +266,6 @@ export default function LiveCallPage() {
   }, [microphoneState, connectionState, connection]);
 
   const lastLine = combinedTranscript.length > 0 ? combinedTranscript[combinedTranscript.length - 1].text : "No transcript yet...";
-
-  if (!isMeetingStarted) {
-    // Show the InitialState until the user starts the meeting
-    return <InitialState onStart={() => setIsMeetingStarted(true)} />;
-  }
-  // Once the meeting is started, show the main layout
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
