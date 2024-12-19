@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 /**
  * This component renders the input section at the bottom of the application.
@@ -11,10 +12,8 @@ type InputSectionProps = {
 }
 
 export default function InputSection({ onSendMessage }: InputSectionProps) {
-  // State to manage the current input value
   const [input, setInput] = useState('')
 
-  // Handler for submitting user messages
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (input.trim()) {
@@ -23,7 +22,7 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
     }
   }
 
-  // Array of quick suggestion messages
+  // Quick suggestion messages
   const suggestions = [
     "Define that",
     "Help me Google that",
@@ -32,17 +31,23 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
 
   return (
     <div className="bg-white border-t border-gray-200 p-4">
-      <div className="flex space-x-2 mb-2 overflow-x-auto pb-2">
-        {suggestions.map((suggestion, index) => (
-          <button
-            key={index}
-            className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm whitespace-nowrap"
-            onClick={() => onSendMessage(suggestion)}
+      {/* Horizontal scroll for suggestions. The whitespace-nowrap ensures they line up horizontally.
+         If they overflow, horizontal scrolling will be enabled by ScrollArea. */}
+      <ScrollArea className="w-full scrollbar-none">
+        <div className="flex space-x-2 mb-2 pb-2 whitespace-nowrap">
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm whitespace-nowrap"
+              onClick={() => onSendMessage(suggestion)}
             >
-            {suggestion}
+              {suggestion}
             </button>
-        ))}
-      </div>
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+
       <form onSubmit={handleSubmit} className="flex items-center">
         <input
           type="text"
