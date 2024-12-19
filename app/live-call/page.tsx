@@ -22,23 +22,13 @@ type TranscriptEntry = {
   type: "transcript";
   speaker: number;
   text: string;
-  isUtteranceEnd?: boolean;
-  lastWordEnd?: number;
 };
 
-export type ConsolidatedMessage = {
-  type: "consolidated";
-  speaker: number;
-  text: string;
-  trigger: "utterance_end" | "speaker_change";
-};
-
-export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
+type DisplayEntry = TranscriptEntry; // Only transcript entries remain
 
 export default function LiveCallPage() {
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
-  const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
   const [isAudioOn, setIsAudioOn] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
@@ -66,12 +56,10 @@ export default function LiveCallPage() {
       type: "transcript" as const,
       speaker: t.speaker,
       text: t.text,
-      isUtteranceEnd: t.isUtteranceEnd,
-      lastWordEnd: t.lastWordEnd,
     })),
   ];
 
-  const fetchAIResponse = async (userMessage: string, transcript: string) => {
+  const fetchAIResponse = async (userMessage: string, transcriptText: string) => {
     try {
       const response = await fetch("/api/answer", {
         method: "POST",
@@ -80,7 +68,7 @@ export default function LiveCallPage() {
         },
         body: JSON.stringify({
           message: userMessage,
-          transcript: transcript,
+          transcript: transcriptText,
         }),
       });
 
@@ -210,23 +198,6 @@ export default function LiveCallPage() {
   useEffect(() => {
     if (!microphone || !connection) return;
 
-    const handleConsolidation = (trigger: "utterance_end" | "speaker_change", newSpeaker?: number) => {
-      if (currentCollectedText.length > 0) {
-        const consolidatedEntry = {
-          type: "consolidated" as const,
-          speaker: currentSpeaker,
-          text: currentCollectedText.join(" "),
-          trigger,
-        };
-        setTranscript((prev) => [...prev, consolidatedEntry]);
-        setCurrentCollectedText([]);
-      }
-
-      if (newSpeaker !== undefined) {
-        setCurrentSpeaker(newSpeaker);
-      }
-    };
-
     const onData = (e: BlobEvent) => {
       if (e.data.size > 0) {
         connection?.send(e.data);
@@ -240,14 +211,13 @@ export default function LiveCallPage() {
           type: "transcript",
           speaker: words[0].speaker || 0,
           text: words.map((word) => word.word).join(" "),
-          isUtteranceEnd: false,
         };
 
         if (data.is_final) {
+          // If the speaker changes, update currentSpeaker
           if (newEntry.speaker !== currentSpeaker) {
-            handleConsolidation("speaker_change", newEntry.speaker);
+            setCurrentSpeaker(newEntry.speaker);
           }
-          setCurrentCollectedText((prev) => [...prev, newEntry.text]);
           setTranscript((prev) => [...prev, newEntry]);
           setInterimTranscript([]);
         } else {
@@ -256,22 +226,8 @@ export default function LiveCallPage() {
       }
     };
 
-    const onUtteranceEnd = (data: any) => {
-      setTranscript((prev) => {
-        const lastEntry = prev[prev.length - 1];
-        if (lastEntry && lastEntry.type === "transcript") {
-          return [
-            ...prev.slice(0, -1),
-            {
-              ...lastEntry,
-              isUtteranceEnd: true,
-              lastWordEnd: data.last_word_end,
-            },
-          ];
-        }
-        return prev;
-      });
-      handleConsolidation("utterance_end");
+    const onUtteranceEnd = () => {
+      // We no longer do anything special on utterance end.
     };
 
     if (isAudioOn && connectionState === LiveConnectionState.OPEN) {
@@ -285,7 +241,7 @@ export default function LiveCallPage() {
       connection.removeListener("UtteranceEnd", onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
-  }, [isAudioOn, connectionState, microphone, connection, currentSpeaker, currentCollectedText]);
+  }, [isAudioOn, connectionState, microphone, connection, currentSpeaker]);
 
   // Keep-alive management
   useEffect(() => {

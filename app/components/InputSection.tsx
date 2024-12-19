@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 /**
  * This component renders the input section at the bottom of the application.
@@ -32,17 +33,19 @@ export default function InputSection({ onSendMessage }: InputSectionProps) {
 
   return (
     <div className="bg-white border-t border-gray-200 p-4">
-      <div className="flex space-x-2 mb-2 overflow-x-auto pb-2">
-        {suggestions.map((suggestion, index) => (
-          <button
-            key={index}
-            className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm whitespace-nowrap"
-            onClick={() => onSendMessage(suggestion)}
-            >
-            {suggestion}
-            </button>
-        ))}
-      </div>
+      <ScrollArea className="w-full">
+        <div className="flex space-x-2 mb-2 overflow-x-auto pb-2">
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm whitespace-nowrap"
+              onClick={() => onSendMessage(suggestion)}
+              >
+              {suggestion}
+              </button>
+          ))}
+        </div>
+      </ScrollArea>
       <form onSubmit={handleSubmit} className="flex items-center">
         <input
           type="text"
