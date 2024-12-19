@@ -22,7 +22,19 @@ ${formattedLines}
 Also, here are the last ${pastSummaries.length} chunk(s) of summary that have already been produced. Don't re-summarize their content, but use them as context:
 ${pastSummaries.map((sum, i) => `Previous Summary ${i+1}:\n${sum}\n`).join('')}
 `;
-  }
+}
+
+// Add additional prompt instructions
+prompt += `
+
+As you summarize, don't refer to "the transcript" or "this section" or stuff like that in your response. Be concrete about which speaker says what.
+
+<STYLE EXAMPLES>
+BAD Example: "In this transcript section, the speakers agree that they will set a meeting for next Thursday."
+GOOD Example: "Speaker 2 and Speaker 3 want to set a meeting for next Thursday."
+BAD Example: "In the transcript, multiple speakers discuss the feasibility of refactoring the frontend in Node JS. Resources are also discussed."
+GOOD Example: "Speaker 0 suggests that the frontend be refactored in Node JS, but Speaker 1 has doubts about the timeline. The key point of disagreement is engineering resources - Speaker 1 says there are enough frontend engineers, but Speaker 0 disagrees."
+</STYLE EXAMPLES>`;
 
   // Replace this URL with your actual GPT-4 API endpoint
   const gpt4Url = 'https://api.openai.com/v1/chat/completions';

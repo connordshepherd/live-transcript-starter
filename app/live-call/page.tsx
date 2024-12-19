@@ -268,7 +268,7 @@ export default function LiveCallPage() {
   const lastLine = combinedTranscript.length > 0 ? combinedTranscript[combinedTranscript.length - 1].text : "No transcript yet...";
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       <LiveTranscriptBar
         transcript={lastLine}
         isRecording={isAudioOn}

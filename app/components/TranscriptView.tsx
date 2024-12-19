@@ -1,6 +1,14 @@
+/**
+ * A simplified TranscriptView that only shows final transcript entries.
+ * We assume `transcript` is already filtered in the parent so that it contains
+ * only final transcript entries of type 'transcript'.
+ */
+
 'use client'
 
 import { X } from 'lucide-react'
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useEffect, useRef } from 'react'
 
 type FinalTranscriptEntry = {
   speaker: number
@@ -9,16 +17,19 @@ type FinalTranscriptEntry = {
 
 type TranscriptViewProps = {
   onClose: () => void
-  // The parent should pass ONLY final transcript entries or a filtered list
   transcript: FinalTranscriptEntry[]
 }
 
-/**
- * A simplified TranscriptView that only shows final transcript entries.
- * We assume `transcript` is already filtered in the parent so that it contains
- * only final transcript entries of type 'transcript'.
- */
 export default function TranscriptView({ onClose, transcript }: TranscriptViewProps) {
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    // Scroll to the bottom whenever transcript updates
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [transcript])
+
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 text-white flex items-center justify-between">
@@ -30,7 +41,7 @@ export default function TranscriptView({ onClose, transcript }: TranscriptViewPr
           <X className="w-6 h-6" />
         </button>
       </div>
-      <div className="flex-1 overflow-auto p-4 text-gray-800">
+      <ScrollArea className="flex-1 p-4 text-gray-800">
         <div className="space-y-4">
           {transcript.length === 0 ? (
             <p>No final transcripts available yet.</p>
@@ -42,8 +53,9 @@ export default function TranscriptView({ onClose, transcript }: TranscriptViewPr
               </div>
             ))
           )}
+          <div ref={bottomRef} />
         </div>
-      </div>
+      </ScrollArea>
     </div>
   )
 }
