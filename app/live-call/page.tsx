@@ -19,7 +19,7 @@ import MainContentArea from "../components/MainContentArea";
 import InputSection from "../components/InputSection";
 
 type TranscriptEntry = {
-  type: 'transcript';
+  type: "transcript";
   speaker: number;
   text: string;
   isUtteranceEnd?: boolean;
@@ -27,10 +27,10 @@ type TranscriptEntry = {
 };
 
 export type ConsolidatedMessage = {
-  type: 'consolidated';
+  type: "consolidated";
   speaker: number;
   text: string;
-  trigger: 'utterance_end' | 'speaker_change';
+  trigger: "utterance_end" | "speaker_change";
 };
 
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
@@ -50,119 +50,129 @@ export default function LiveCallPage() {
 
   const [messages, setMessages] = useState<Array<{
     id: number;
-    type: 'summary' | 'user' | 'ai';
+    type: "summary" | "user" | "ai";
     title?: string;
     content: string;
     timestamp: string;
     quotedMessage?: string;
   }>>([]);
 
+  // Track the last count at which we summarized
+  const [lastSummarizedCount, setLastSummarizedCount] = useState<number>(0);
+
   const combinedTranscript: DisplayEntry[] = [
     ...transcript,
-    ...interimTranscript.map(t => ({
-      type: 'transcript' as const,
+    ...interimTranscript.map((t) => ({
+      type: "transcript" as const,
       speaker: t.speaker,
       text: t.text,
       isUtteranceEnd: t.isUtteranceEnd,
-      lastWordEnd: t.lastWordEnd
-    }))
+      lastWordEnd: t.lastWordEnd,
+    })),
   ];
 
   const fetchAIResponse = async (userMessage: string, transcript: string) => {
     try {
-      const response = await fetch('/api/answer', {
-        method: 'POST',
+      const response = await fetch("/api/answer", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: userMessage,
-          transcript: transcript
+          transcript: transcript,
         }),
       });
-      
+
       const data = await response.json();
       return data.answer;
     } catch (error) {
-      console.error('Error fetching AI response:', error);
+      console.error("Error fetching AI response:", error);
       return "Sorry, I couldn't process your request at this time.";
     }
   };
-  
+
   const handleSendMessage = async (message: string) => {
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      type: 'user',
-      content: message,
-      timestamp: new Date().toISOString()
-    }]);
-  
-    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
-  
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        content: message,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    const fullTranscript = combinedTranscript.map((entry) => entry.text).join("\n");
+
     const aiResponse = await fetchAIResponse(message, fullTranscript);
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      type: 'ai',
-      content: aiResponse,
-      timestamp: new Date().toISOString(),
-      quotedMessage: message
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "ai",
+        content: aiResponse,
+        timestamp: new Date().toISOString(),
+        quotedMessage: message,
+      },
+    ]);
   };
 
   /**
-   * Generate a summary of the last 50 lines of transcript.
+   * Generate a summary of the last 20 lines of transcript.
    * If we have multiple summaries, include up to the last 3 summaries in the prompt.
    */
   const generateSummary = async () => {
-    const finalTranscriptEntries = combinedTranscript.filter(e => e.type === 'transcript') as TranscriptEntry[];
+    const finalTranscriptEntries = combinedTranscript.filter((e) => e.type === "transcript") as TranscriptEntry[];
     const totalFinalLines = finalTranscriptEntries.length;
 
     if (totalFinalLines === 0) return;
 
-    // Identify the slice of 50 lines we want. 
-    // If totalFinalLines = 50, we want [0..49]. If 100, we want [50..99], and so forth.
-    const startIndex = totalFinalLines - 50; // This works because we'll only call this when totalFinalLines % 50 === 0
-    const last50Lines = finalTranscriptEntries.slice(startIndex, totalFinalLines);
+    // Identify the slice of 20 lines we want
+    const startIndex = totalFinalLines - 20;
+    const last20Lines = finalTranscriptEntries.slice(startIndex, totalFinalLines);
 
     // Get the last 1-3 summaries
-    const pastSummaries = messages
-      .filter(m => m.type === 'summary')
-      .slice(-3);
+    const pastSummaries = messages.filter((m) => m.type === "summary").slice(-3);
 
-    const response = await fetch('/api/summarize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        lines: last50Lines,
-        pastSummaries: pastSummaries.map(s => s.content),
+        lines: last20Lines.map((line) => ({ speaker: line.speaker, text: line.text })),
+        pastSummaries: pastSummaries.map((s) => s.content),
       }),
     });
 
     if (!response.ok) {
-      console.error('Error generating summary:', response.statusText);
+      console.error("Error generating summary:", response.statusText);
       return;
     }
 
     const data = await response.json();
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      type: 'summary',
-      title: 'Summary',
-      content: data.summary,
-      timestamp: new Date().toISOString()
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "summary",
+        title: "Summary",
+        content: data.summary,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
   };
 
   /**
-   * Monitor the length of final transcript lines and trigger summary every 50 lines.
+   * Monitor the length of final transcript lines and trigger summary every 20 lines,
+   * but only if we haven't summarized at this line count before.
    */
   useEffect(() => {
-    const finalTranscriptLines = combinedTranscript.filter(e => e.type === 'transcript').length;
-    if (finalTranscriptLines > 0 && finalTranscriptLines % 50 === 0) {
-      // Trigger summary generation
+    const finalTranscriptLines = combinedTranscript.filter((e) => e.type === "transcript").length;
+    if (finalTranscriptLines > 0 && finalTranscriptLines % 20 === 0 && finalTranscriptLines !== lastSummarizedCount) {
       generateSummary();
+      setLastSummarizedCount(finalTranscriptLines);
     }
-  }, [combinedTranscript]);
+  }, [combinedTranscript, lastSummarizedCount]);
 
   // Manage microphone and Deepgram connection when isAudioOn changes
   useEffect(() => {
@@ -200,15 +210,15 @@ export default function LiveCallPage() {
   useEffect(() => {
     if (!microphone || !connection) return;
 
-    const handleConsolidation = (trigger: 'utterance_end' | 'speaker_change', newSpeaker?: number) => {
+    const handleConsolidation = (trigger: "utterance_end" | "speaker_change", newSpeaker?: number) => {
       if (currentCollectedText.length > 0) {
         const consolidatedEntry = {
-          type: 'consolidated' as const,
+          type: "consolidated" as const,
           speaker: currentSpeaker,
-          text: currentCollectedText.join(' '),
-          trigger
+          text: currentCollectedText.join(" "),
+          trigger,
         };
-        setTranscript(prev => [...prev, consolidatedEntry]);
+        setTranscript((prev) => [...prev, consolidatedEntry]);
         setCurrentCollectedText([]);
       }
 
@@ -227,18 +237,18 @@ export default function LiveCallPage() {
       const words = data.channel.alternatives[0].words || [];
       if (words.length > 0) {
         const newEntry: TranscriptEntry = {
-          type: 'transcript',
+          type: "transcript",
           speaker: words[0].speaker || 0,
-          text: words.map(word => word.word).join(' '),
-          isUtteranceEnd: false
+          text: words.map((word) => word.word).join(" "),
+          isUtteranceEnd: false,
         };
 
         if (data.is_final) {
           if (newEntry.speaker !== currentSpeaker) {
-            handleConsolidation('speaker_change', newEntry.speaker);
+            handleConsolidation("speaker_change", newEntry.speaker);
           }
-          setCurrentCollectedText(prev => [...prev, newEntry.text]);
-          setTranscript(prev => [...prev, newEntry]);
+          setCurrentCollectedText((prev) => [...prev, newEntry.text]);
+          setTranscript((prev) => [...prev, newEntry]);
           setInterimTranscript([]);
         } else {
           setInterimTranscript([newEntry]);
@@ -247,29 +257,32 @@ export default function LiveCallPage() {
     };
 
     const onUtteranceEnd = (data: any) => {
-      setTranscript(prev => {
+      setTranscript((prev) => {
         const lastEntry = prev[prev.length - 1];
-        if (lastEntry && lastEntry.type === 'transcript') {
-          return [...prev.slice(0, -1), {
-            ...lastEntry,
-            isUtteranceEnd: true,
-            lastWordEnd: data.last_word_end
-          }];
+        if (lastEntry && lastEntry.type === "transcript") {
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastEntry,
+              isUtteranceEnd: true,
+              lastWordEnd: data.last_word_end,
+            },
+          ];
         }
         return prev;
       });
-      handleConsolidation('utterance_end');
+      handleConsolidation("utterance_end");
     };
 
     if (isAudioOn && connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      connection.addListener('UtteranceEnd', onUtteranceEnd);
+      connection.addListener("UtteranceEnd", onUtteranceEnd);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
     }
 
     return () => {
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      connection.removeListener('UtteranceEnd', onUtteranceEnd);
+      connection.removeListener("UtteranceEnd", onUtteranceEnd);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
   }, [isAudioOn, connectionState, microphone, connection, currentSpeaker, currentCollectedText]);
@@ -312,10 +325,10 @@ export default function LiveCallPage() {
         <TranscriptView
           onClose={() => setIsTranscriptExpanded(false)}
           transcript={combinedTranscript
-            .filter(entry => entry.type === 'transcript')
-            .map(entry => ({
+            .filter((entry) => entry.type === "transcript")
+            .map((entry) => ({
               speaker: (entry as TranscriptEntry).speaker,
-              text: (entry as TranscriptEntry).text
+              text: (entry as TranscriptEntry).text,
             }))}
         />
       )}
