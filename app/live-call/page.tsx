@@ -36,17 +36,11 @@ export type ConsolidatedMessage = {
 export type DisplayEntry = TranscriptEntry | ConsolidatedMessage;
 
 export default function LiveCallPage() {
-  // State for the full transcript
   const [transcript, setTranscript] = useState<DisplayEntry[]>([]);
-  // Interim transcripts for partial utterances
   const [interimTranscript, setInterimTranscript] = useState<TranscriptEntry[]>([]);
-  // Current speaker text buffer
   const [currentCollectedText, setCurrentCollectedText] = useState<string[]>([]);
-  // Current speaker number
   const [currentSpeaker, setCurrentSpeaker] = useState<number>(0);
-  // Controls audio on/off (recording state)
   const [isAudioOn, setIsAudioOn] = useState(false);
-  // Controls whether full transcript is expanded
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
 
   const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
@@ -54,7 +48,6 @@ export default function LiveCallPage() {
 
   const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Add new state for chat messages
   const [messages, setMessages] = useState<Array<{
     id: number;
     type: 'summary' | 'user' | 'ai';
@@ -64,7 +57,6 @@ export default function LiveCallPage() {
     quotedMessage?: string;
   }>>([]);
 
-  // Combine final and interim transcripts for display
   const combinedTranscript: DisplayEntry[] = [
     ...transcript,
     ...interimTranscript.map(t => ({
@@ -97,9 +89,7 @@ export default function LiveCallPage() {
     }
   };
   
-  // Update the handleSendMessage function
   const handleSendMessage = async (message: string) => {
-    // First add the user message
     setMessages(prev => [...prev, {
       id: Date.now(),
       type: 'user',
@@ -107,10 +97,8 @@ export default function LiveCallPage() {
       timestamp: new Date().toISOString()
     }]);
   
-    // Get the full transcript text
     const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
   
-    // Then fetch and add AI response
     const aiResponse = await fetchAIResponse(message, fullTranscript);
     setMessages(prev => [...prev, {
       id: Date.now(),
@@ -121,58 +109,60 @@ export default function LiveCallPage() {
     }]);
   };
 
-  // Add a function to generate summary
+  /**
+   * Generate a summary of the last 50 lines of transcript.
+   * If we have multiple summaries, include up to the last 3 summaries in the prompt.
+   */
   const generateSummary = async () => {
-    // Only generate if we have transcript content
-    if (combinedTranscript.length === 0) return;
+    const finalTranscriptEntries = combinedTranscript.filter(e => e.type === 'transcript') as TranscriptEntry[];
+    const totalFinalLines = finalTranscriptEntries.length;
 
-    const fullTranscript = combinedTranscript.map(entry => entry.text).join('\n');
+    if (totalFinalLines === 0) return;
 
-    try {
-      const response = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ transcript: fullTranscript }),
-      });
+    // Identify the slice of 50 lines we want. 
+    // If totalFinalLines = 50, we want [0..49]. If 100, we want [50..99], and so forth.
+    const startIndex = totalFinalLines - 50; // This works because we'll only call this when totalFinalLines % 50 === 0
+    const last50Lines = finalTranscriptEntries.slice(startIndex, totalFinalLines);
 
-      const data = await response.json();
-      
-      setMessages(prev => [...prev, {
-        id: Date.now(),
-        type: 'summary',
-        title: 'Summary',
-        content: data.summary,
-        timestamp: new Date().toISOString()
-      }]);
-    } catch (error) {
-      console.error('Error generating summary:', error);
+    // Get the last 1-3 summaries
+    const pastSummaries = messages
+      .filter(m => m.type === 'summary')
+      .slice(-3);
+
+    const response = await fetch('/api/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lines: last50Lines,
+        pastSummaries: pastSummaries.map(s => s.content),
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Error generating summary:', response.statusText);
+      return;
     }
+
+    const data = await response.json();
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'summary',
+      title: 'Summary',
+      content: data.summary,
+      timestamp: new Date().toISOString()
+    }]);
   };
 
-  // Add useEffect for periodic summarization
+  /**
+   * Monitor the length of final transcript lines and trigger summary every 50 lines.
+   */
   useEffect(() => {
-    // Only run summarization if audio is on and we have transcript content
-    if (!isAudioOn || combinedTranscript.length === 0) return;
-
-    // Function to check if we should generate summary
-    const checkAndGenerateSummary = () => {
-      const now = new Date();
-      const seconds = now.getSeconds();
-      if (seconds === 0 || seconds === 30) {
-        generateSummary();
-      }
-    };
-
-    // Check immediately in case we're starting near a 30-second mark
-    checkAndGenerateSummary();
-
-    // Set up interval to check every second
-    const intervalId = setInterval(checkAndGenerateSummary, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [isAudioOn, combinedTranscript]);
+    const finalTranscriptLines = combinedTranscript.filter(e => e.type === 'transcript').length;
+    if (finalTranscriptLines > 0 && finalTranscriptLines % 50 === 0) {
+      // Trigger summary generation
+      generateSummary();
+    }
+  }, [combinedTranscript]);
 
   // Manage microphone and Deepgram connection when isAudioOn changes
   useEffect(() => {
@@ -306,7 +296,6 @@ export default function LiveCallPage() {
     };
   }, [microphoneState, connectionState, connection]);
 
-  // For the LiveTranscriptBar, we'll show the last line of the transcript as a snippet
   const lastLine = combinedTranscript.length > 0 ? combinedTranscript[combinedTranscript.length - 1].text : "No transcript yet...";
 
   return (
@@ -327,8 +316,7 @@ export default function LiveCallPage() {
             .map(entry => ({
               speaker: (entry as TranscriptEntry).speaker,
               text: (entry as TranscriptEntry).text
-            }))
-          }
+            }))}
         />
       )}
 

@@ -1,9 +1,28 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const { transcript } = await request.json();
+  const { lines, pastSummaries } = await request.json() as {
+    lines: Array<{ speaker: number; text: string }>;
+    pastSummaries: string[];
+  };
 
-  console.log(`Received summarization request. Transcript length: ${transcript.length}`);
+  const formattedLines = lines.map((line, index) => `Speaker ${line.speaker}: ${line.text}`).join('\n');
+
+  let prompt = `You are a helpful assistant that summarizes transcripts.
+
+Summarize these 50 lines of transcribed audio. Look for main ideas, speakers, and key points. Your response should be 3-4 sentences.
+
+Transcript:
+${formattedLines}
+`;
+
+  if (pastSummaries && pastSummaries.length > 0) {
+    prompt += `
+
+Also, here are the last ${pastSummaries.length} chunk(s) of summary that have already been produced. Don't re-summarize their content, but use them as context:
+${pastSummaries.map((sum, i) => `Previous Summary ${i+1}:\n${sum}\n`).join('')}
+`;
+  }
 
   // Replace this URL with your actual GPT-4 API endpoint
   const gpt4Url = 'https://api.openai.com/v1/chat/completions';
@@ -16,7 +35,7 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
@@ -24,7 +43,7 @@ export async function POST(request: Request) {
           },
           {
             role: "user",
-            content: `Summarize this transcript: ${transcript}`
+            content: prompt
           }
         ]
       }),
@@ -32,8 +51,6 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     const summary = data.choices[0].message.content;
-
-    console.log(`Generated summary. Length: ${summary.length}`);
 
     return NextResponse.json({ summary });
   } catch (error) {
