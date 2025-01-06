@@ -15,7 +15,8 @@ import {
   type Message,
   message,
   vote,
-  meetingTranscript
+  meetingTranscript,
+  meetingMessage
 } from './schema';
 
 import { meeting, meetingAttendee } from './schema';
@@ -378,4 +379,65 @@ export async function getAllMeetingsWithStats() {
   }
 
   return results;
+}
+
+// -----------------------------------------------------
+// NEW: Create / fetch meeting messages (summary/user/ai)
+// -----------------------------------------------------
+export async function createMeetingMessage({
+  meetingId,
+  type,
+  content,
+  title,
+  quotedMessage,
+  timestamp,
+}: {
+  meetingId: string;
+  type: 'summary' | 'user' | 'ai';
+  content: string;
+  title?: string;
+  quotedMessage?: string;
+  // This is optional; if not provided, DB defaults to now()
+  timestamp?: string;
+}) {
+  try {
+    const [newMsg] = await db
+      .insert(meetingMessage)
+      .values({
+        meetingId,
+        type,
+        content,
+        title,
+        quotedMessage,
+        // if you want to let DB handle the default, remove this line:
+        ...(timestamp && { timestamp: new Date(timestamp) }),
+      })
+      .returning({
+        id: meetingMessage.id,
+        meetingId: meetingMessage.meetingId,
+        type: meetingMessage.type,
+        content: meetingMessage.content,
+        title: meetingMessage.title,
+        quotedMessage: meetingMessage.quotedMessage,
+        timestamp: meetingMessage.timestamp,
+      });
+
+    return newMsg;
+  } catch (error) {
+    console.error('Failed to create meeting message:', error);
+    throw error;
+  }
+}
+
+export async function getMeetingMessagesByMeetingId(meetingId: string) {
+  try {
+    return await db
+      .select()
+      .from(meetingMessage)
+      .where(eq(meetingMessage.meetingId, meetingId))
+      .orderBy(asc(meetingMessage.timestamp));
+  } catch (error) {
+    console.error('Failed to fetch meeting messages:', error);
+    throw error;
+  }
 }
