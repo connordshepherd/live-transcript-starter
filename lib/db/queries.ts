@@ -17,6 +17,8 @@ import {
   vote,
 } from './schema';
 
+import { meeting, meetingAttendee } from './schema';
+
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
@@ -278,4 +280,25 @@ export async function getSuggestionsByDocumentId({
     );
     throw error;
   }
+}
+
+export async function createMeeting(userId: string) {
+  // Create Meeting row
+  const [newMeeting] = await db.insert(meeting)
+    .values({
+      startTime: new Date(),
+    })
+    .returning({
+      id: meeting.id,
+      startTime: meeting.startTime,
+    });
+
+  // Create pivot record to associate the meeting with the user
+  await db.insert(meetingAttendee)
+    .values({
+      meetingId: newMeeting.id,
+      userId,
+    });
+
+  return newMeeting;
 }
