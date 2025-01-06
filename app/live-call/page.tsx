@@ -309,6 +309,11 @@ function LiveCallContent() {
           //  POST FINAL TRANSCRIPT LINE TO OUR API
           // *************************************************
           if (meetingId) {
+            console.log(`Attempting to POST transcript line to /api/meetings/${meetingId}/transcript`, {
+              speaker: newEntry.speaker,
+              text: newEntry.text,
+            });
+          
             fetch(`/api/meetings/${meetingId}/transcript`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -316,9 +321,26 @@ function LiveCallContent() {
                 speaker: newEntry.speaker,
                 text: newEntry.text,
               }),
-            }).catch((err) => {
-              console.error("Error storing transcript line:", err);
-            });
+            })
+              .then(async (response) => {
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                return response.json();
+              })
+              .then((data) => {
+                console.log('Successfully stored transcript line:', data);
+              })
+              .catch((err) => {
+                console.error('Error storing transcript line:', {
+                  status: err.status,
+                  message: err.message,
+                  meetingId,
+                  speaker: newEntry.speaker,
+                  text: newEntry.text
+                });
+              });
           }
         } else {
           // For interim lines, just update local state without saving
