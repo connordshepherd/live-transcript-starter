@@ -1,7 +1,7 @@
 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
@@ -344,4 +344,38 @@ export async function getTranscriptLinesByMeetingId(meetingId: string) {
     console.error('Failed to fetch transcript lines by meeting:', error);
     throw error;
   }
+}
+
+// Example helper to fetch all meetings + stats
+export async function getAllMeetingsWithStats() {
+  // 1) Fetch the raw list of meetings
+  const allMeetings = await db
+    .select()
+    .from(meeting)
+    .orderBy(desc(meeting.startTime));
+
+  // 2) For each meeting, count transcript lines + participants
+  const results = [];
+  for (const m of allMeetings) {
+    // count the transcript lines
+    const [transcriptCount] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(meetingTranscript)
+      .where(eq(meetingTranscript.meetingId, m.id));
+
+    // count participants
+    const [attendeeCount] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(meetingAttendee)
+      .where(eq(meetingAttendee.meetingId, m.id));
+
+    results.push({
+      id: m.id,
+      startTime: m.startTime.toISOString(), // or .toLocaleString(), but usually .toISOString() for JSON
+      transcriptLines: transcriptCount.count,
+      participants: attendeeCount.count,
+    });
+  }
+
+  return results;
 }
