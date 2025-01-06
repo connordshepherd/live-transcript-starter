@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 type MainContentAreaProps = {
   messages: Array<{
-    id: number
+    id?: string
     type: 'summary' | 'user' | 'ai'
     title?: string
     content: string
@@ -32,18 +32,32 @@ const MainContentArea = forwardRef<HTMLDivElement, MainContentAreaProps>(({ mess
   return (
     <ScrollArea className="flex-1 relative">
       <div ref={ref} className="p-4 space-y-4">
-        {messages.map((message) => {
-          switch (message.type) {
-            case 'summary':
-              return <SummaryCard key={message.id} title={message.title!} content={message.content} timestamp={message.timestamp} />
-            case 'user':
-              return <UserChatMessage key={message.id} content={message.content} timestamp={message.timestamp} />
-            case 'ai':
-              return <AIReplyMessage key={message.id} content={message.content} timestamp={message.timestamp} quotedMessage={message.quotedMessage} />
-            default:
-              return null
-          }
-        })}
+      {messages.map((message) => {
+        switch (message.type) {
+          case 'summary':
+            return <SummaryCard 
+              key={message.id || message.timestamp} 
+              title={message.title!} 
+              content={message.content} 
+              timestamp={message.timestamp} 
+            />
+          case 'user':
+            return <UserChatMessage 
+              key={message.id || message.timestamp} 
+              content={message.content} 
+              timestamp={message.timestamp} 
+            />
+          case 'ai':
+            return <AIReplyMessage 
+              key={message.id || message.timestamp} 
+              content={message.content} 
+              timestamp={message.timestamp} 
+              quotedMessage={message.quotedMessage} 
+            />
+          default:
+            return null
+        }
+      })}
         <div ref={bottomRef} />
       </div>
     </ScrollArea>

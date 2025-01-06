@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -131,3 +132,35 @@ export const meetingAttendee = pgTable(
     };
   },
 );
+
+export const meetingTranscript = pgTable('MeetingTranscript', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  meetingId: uuid('meetingId')
+    .notNull()
+    .references(() => meeting.id),
+  speaker: integer('speaker').notNull(),
+  text: text('text').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+});
+
+// -----------------------------------------------------
+// NEW: Table for storing summary, user, and AI messages
+// -----------------------------------------------------
+export const meetingMessage = pgTable('MeetingMessage', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  meetingId: uuid('meetingId')
+    .notNull()
+    .references(() => meeting.id),
+  // "summary" | "user" | "ai"
+  type: text('type').notNull(),
+  // optional title for summaries
+  title: text('title'),
+  // main text content
+  content: text('content').notNull(),
+  // optional quoted message
+  quotedMessage: text('quotedMessage'),
+  // the time this message was generated
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+});
+
+export type MeetingMessage = InferSelectModel<typeof meetingMessage>;
