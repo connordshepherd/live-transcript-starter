@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import {
   LiveConnectionState,
   LiveTranscriptionEvent,
@@ -33,7 +33,7 @@ type TranscriptEntry = {
 
 type DisplayEntry = TranscriptEntry; // In this example, we only have transcript entries.
 
-export default function LiveCallPage() {
+function LiveCallContent() {
   // Grab the "meetingId" parameter from the URL query string
   // Example: /live-call?meetingId=abc123
   const searchParams = useSearchParams();
@@ -407,5 +407,14 @@ export default function LiveCallPage() {
       {/* Input section for user messages */}
       <InputSection onSendMessage={handleSendMessage} />
     </div>
+  );
+}
+
+// Main page component with Suspense wrapper
+export default function LiveCallPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LiveCallContent />
+    </Suspense>
   );
 }
