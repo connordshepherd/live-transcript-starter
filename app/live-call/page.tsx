@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
 import {
@@ -60,15 +59,6 @@ export default function LiveCallPage() {
       text: t.text,
     })),
   ];
-
-  const searchParams = useSearchParams();
-  const autostart = searchParams.get("autostart");
-
-  useEffect(() => {
-    if (autostart === "true") {
-      setIsAudioOn(true);
-    }
-  }, [autostart]);
 
   const fetchAIResponse = async (userMessage: string, transcriptText: string) => {
     try {

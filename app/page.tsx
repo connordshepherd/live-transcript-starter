@@ -14,7 +14,7 @@ export default function Page() {
 
   // We only need a simple click handler to route to /live-call and autostart
   const handleStartNewMeeting = () => {
-    router.push("/live-call?autostart=true");
+    router.push("/live-call");
   };
 
   return (
