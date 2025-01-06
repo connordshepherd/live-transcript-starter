@@ -17,6 +17,7 @@ import LiveTranscriptBar from "../components/LiveTranscriptBar";
 import TranscriptView from "../components/TranscriptView";
 import MainContentArea from "../components/MainContentArea";
 import InputSection from "../components/InputSection";
+import { useSearchParams } from "next/navigation";
 
 type TranscriptEntry = {
   type: "transcript";
