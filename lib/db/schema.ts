@@ -107,3 +107,27 @@ export const suggestion = pgTable(
 );
 
 export type Suggestion = InferSelectModel<typeof suggestion>;
+
+// 1) Meeting table
+export const meeting = pgTable('Meeting', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  startTime: timestamp('startTime').notNull(),
+});
+
+// 2) MeetingAttendee pivot table
+export const meetingAttendee = pgTable(
+  'MeetingAttendee',
+  {
+    meetingId: uuid('meetingId')
+      .notNull()
+      .references(() => meeting.id),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
+  },
+  (table) => {
+    return {
+      pk: primaryKey(table.meetingId, table.userId),
+    };
+  },
+);
