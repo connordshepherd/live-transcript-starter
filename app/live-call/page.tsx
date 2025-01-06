@@ -17,6 +17,7 @@ import LiveTranscriptBar from "../components/LiveTranscriptBar";
 import TranscriptView from "../components/TranscriptView";
 import MainContentArea from "../components/MainContentArea";
 import InputSection from "../components/InputSection";
+import { useSearchParams } from "next/navigation";
 
 type TranscriptEntry = {
   type: "transcript";
@@ -58,6 +59,15 @@ export default function LiveCallPage() {
       text: t.text,
     })),
   ];
+
+  const searchParams = useSearchParams();
+  const autostart = searchParams.get("autostart");
+
+  useEffect(() => {
+    if (autostart === "true") {
+      setIsAudioOn(true);
+    }
+  }, [autostart]);
 
   const fetchAIResponse = async (userMessage: string, transcriptText: string) => {
     try {
