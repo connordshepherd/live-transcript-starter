@@ -2,7 +2,7 @@
 
 import { useFormState } from 'react-dom'; // Change this line
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,6 +13,8 @@ import { login, type LoginActionState } from '../actions';
 
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
@@ -31,9 +33,9 @@ export default function Page() {
       toast.error('Failed validating your submission!');
     } else if (state.status === 'success') {
       setIsSuccessful(true);
-      router.refresh();
+      router.push(callbackUrl);
     }
-  }, [state.status, router]);
+  }, [state.status, router, callbackUrl]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);
