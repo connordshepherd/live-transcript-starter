@@ -15,6 +15,7 @@ import {
   type Message,
   message,
   vote,
+  meetingTranscript
 } from './schema';
 
 import { meeting, meetingAttendee } from './schema';
@@ -301,4 +302,46 @@ export async function createMeeting(userId: string) {
     });
 
   return newMeeting;
+}
+
+// Create one transcript line
+export async function createTranscriptLine({
+  meetingId,
+  speaker,
+  text,
+}: {
+  meetingId: string;
+  speaker: number;
+  text: string;
+}) {
+  try {
+    const [row] = await db
+      .insert(meetingTranscript)
+      .values({ meetingId, speaker, text })
+      .returning({
+        id: meetingTranscript.id,
+        speaker: meetingTranscript.speaker,
+        text: meetingTranscript.text,
+        createdAt: meetingTranscript.createdAt,
+      });
+
+    return row;
+  } catch (error) {
+    console.error('Failed to create transcript line:', error);
+    throw error;
+  }
+}
+
+// Get all transcript lines for a given meeting
+export async function getTranscriptLinesByMeetingId(meetingId: string) {
+  try {
+    return await db
+      .select()
+      .from(meetingTranscript)
+      .where(eq(meetingTranscript.meetingId, meetingId))
+      .orderBy(meetingTranscript.createdAt); // oldest -> newest
+  } catch (error) {
+    console.error('Failed to fetch transcript lines by meeting:', error);
+    throw error;
+  }
 }

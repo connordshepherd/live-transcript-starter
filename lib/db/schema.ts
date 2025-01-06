@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -131,3 +132,13 @@ export const meetingAttendee = pgTable(
     };
   },
 );
+
+export const meetingTranscript = pgTable('MeetingTranscript', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  meetingId: uuid('meetingId')
+    .notNull()
+    .references(() => meeting.id),
+  speaker: integer('speaker').notNull(),
+  text: text('text').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+});
