@@ -27,13 +27,13 @@ ${pastSummaries.map((sum, i) => `Previous Summary ${i+1}:\n${sum}\n`).join('')}
 // Add additional prompt instructions
 prompt += `
 
-As you summarize, don't refer to "the transcript" or "this section" or stuff like that in your response. Be concrete about which speaker says what.
+As you summarize, don't refer to "the transcript" or "this section" or stuff like that in your response. Be as concrete as you can about who says what. Even if you don't have perfect information, use context clues to do the best you can.
 
 <STYLE EXAMPLES>
 BAD Example: "In this transcript section, the speakers agree that they will set a meeting for next Thursday."
-GOOD Example: "Speaker 2 and Speaker 3 want to set a meeting for next Thursday."
+GOOD Example: "Alan and someone from the Merchandising team agree to set a meeting for next Thursday."
 BAD Example: "In the transcript, multiple speakers discuss the feasibility of refactoring the frontend in Node JS. Resources are also discussed."
-GOOD Example: "Speaker 0 suggests that the frontend be refactored in Node JS, but Speaker 1 has doubts about the timeline. The key point of disagreement is engineering resources - Speaker 1 says there are enough frontend engineers, but Speaker 0 disagrees."
+GOOD Example: "One participant suggests that the frontend be refactored in Node JS, but Brittany has doubts about the timeline. The key point of disagreement is engineering resources - Brittany says there are enough frontend engineers, but the participant disagrees."
 </STYLE EXAMPLES>`;
 
   // Replace this URL with your actual GPT-4 API endpoint
