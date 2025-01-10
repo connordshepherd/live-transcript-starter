@@ -441,3 +441,40 @@ export async function getMeetingMessagesByMeetingId(meetingId: string) {
     throw error;
   }
 }
+
+export async function getMeetingsForUserWithStats(userId: string) {
+  // 1) Fetch only the meetings where the user is an attendee
+  //    (notice the `.innerJoin(meetingAttendee, ...)` and `.where(eq(meetingAttendee.userId, userId))`)
+  const userMeetings = await db
+    .select({
+      id: meeting.id,
+      startTime: meeting.startTime
+    })
+    .from(meeting)
+    .innerJoin(meetingAttendee, eq(meeting.id, meetingAttendee.meetingId))
+    .where(eq(meetingAttendee.userId, userId))
+    .orderBy(desc(meeting.startTime));
+
+  // 2) For each meeting, count transcripts + participants
+  const results = [];
+  for (const m of userMeetings) {
+    const [transcriptCount] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(meetingTranscript)
+      .where(eq(meetingTranscript.meetingId, m.id));
+
+    const [attendeeCount] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(meetingAttendee)
+      .where(eq(meetingAttendee.meetingId, m.id));
+
+    results.push({
+      id: m.id,
+      startTime: m.startTime.toISOString(),
+      transcriptLines: transcriptCount.count,
+      participants: attendeeCount.count,
+    });
+  }
+
+  return results;
+}

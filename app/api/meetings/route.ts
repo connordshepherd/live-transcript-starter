@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';    // <-- important
 import { createMeeting } from '@/lib/db/queries';
-import { getAllMeetingsWithStats } from '@/lib/db/queries';
+import { getMeetingsForUserWithStats } from '@/lib/db/queries';
 
 // GET /api/meetings
 export async function GET(req: NextRequest) {
-    try {
-      const meetings = await getAllMeetingsWithStats();
-      return NextResponse.json(meetings);
-    } catch (err) {
-      console.error('Error fetching meetings:', err);
-      return new NextResponse('Failed to fetch meetings', { status: 500 });
-    }
+  // 1) Get the session from your auth
+  const session = await auth();
+
+  // 2) If not authenticated, return 401
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  // 3) Pass the user ID to a function that filters by user
+  try {
+    const meetings = await getMeetingsForUserWithStats(session.user.id);
+    return NextResponse.json(meetings);
+  } catch (err) {
+    console.error('Error fetching meetings:', err);
+    return new NextResponse('Failed to fetch meetings', { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
