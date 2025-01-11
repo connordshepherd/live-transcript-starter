@@ -444,35 +444,47 @@ export async function getMeetingMessagesByMeetingId(meetingId: string) {
 
 export async function getMeetingsForUserWithStats(userId: string) {
   // 1) Fetch only the meetings where the user is an attendee
-  //    (notice the `.innerJoin(meetingAttendee, ...)` and `.where(eq(meetingAttendee.userId, userId))`)
   const userMeetings = await db
     .select({
       id: meeting.id,
-      startTime: meeting.startTime
+      startTime: meeting.startTime,
     })
     .from(meeting)
     .innerJoin(meetingAttendee, eq(meeting.id, meetingAttendee.meetingId))
     .where(eq(meetingAttendee.userId, userId))
     .orderBy(desc(meeting.startTime));
 
-  // 2) For each meeting, count transcripts + participants
+  // 2) For each meeting, count transcripts + figure out participants from transcripts
   const results = [];
+
   for (const m of userMeetings) {
+    // count the transcript lines
     const [transcriptCount] = await db
-      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .select({
+        count: sql<number>`COUNT(*)`.mapWith(Number),
+      })
       .from(meetingTranscript)
       .where(eq(meetingTranscript.meetingId, m.id));
 
-    const [attendeeCount] = await db
-      .select({ count: sql<number>`count(*)`.mapWith(Number) })
-      .from(meetingAttendee)
-      .where(eq(meetingAttendee.meetingId, m.id));
+    // find the maximum speaker value
+    const [maxSpeakerRow] = await db
+      .select({
+        maxSpeaker: sql<number>`MAX(${meetingTranscript.speaker})`.mapWith(Number),
+      })
+      .from(meetingTranscript)
+      .where(eq(meetingTranscript.meetingId, m.id));
+
+    // If there are no transcript rows yet, `maxSpeaker` will be `null`.
+    const maxSpeaker = maxSpeakerRow?.maxSpeaker ?? null;
+
+    // participants = highestSpeakerValue + 1 (or 0 if null)
+    const participants = maxSpeaker !== null ? maxSpeaker + 1 : 0;
 
     results.push({
       id: m.id,
       startTime: m.startTime.toISOString(),
       transcriptLines: transcriptCount.count,
-      participants: attendeeCount.count,
+      participants, // based on `speaker` logic now
     });
   }
 
